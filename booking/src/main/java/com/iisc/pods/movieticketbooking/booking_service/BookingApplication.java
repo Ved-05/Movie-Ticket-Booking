@@ -1,4 +1,4 @@
-package com.iisc.pods.movieticketbooking.booking;
+package com.iisc.pods.movieticketbooking.booking_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
