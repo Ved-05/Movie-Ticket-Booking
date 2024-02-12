@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -43,8 +41,7 @@ public class ShowService {
     public List<Show> getAllShowsByTheatreId(Integer theatreId) throws TheatreNotFoundException {
         if (theatreService.getTheatreById(theatreId) != null) {
             return showRepository.findAllByTheatreId(theatreId);
-        }
-        else {
+        } else {
             throw new TheatreNotFoundException(theatreId);
         }
     }
@@ -67,9 +64,8 @@ public class ShowService {
     public void init() {
         theatreService.init();
         log.info("Loading shows from CSV file");
-        ClassPathResource resource = new ClassPathResource("static/shows.csv");
         try {
-            BufferedReader br = new BufferedReader(new FileReader(resource.getFile()));
+            BufferedReader br = new BufferedReader(new FileReader("data/shows.csv"));
             br.readLine(); // skip header
             String line = br.readLine();
             while (line != null) {

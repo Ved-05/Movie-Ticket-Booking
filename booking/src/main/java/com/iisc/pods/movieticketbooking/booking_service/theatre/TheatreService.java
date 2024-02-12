@@ -1,15 +1,12 @@
 package com.iisc.pods.movieticketbooking.booking_service.theatre;
 
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 @Slf4j
@@ -56,12 +53,10 @@ public class TheatreService {
     public void init() {
         log.info("Loading theatres from CSV file");
         try {
-            ClassPathResource resource = new ClassPathResource("static/theatres.csv");
-            BufferedReader br = new BufferedReader(new FileReader(resource.getFile()));
+            BufferedReader br = new BufferedReader(new FileReader("data/theatres.csv"));
             br.readLine(); // skip header
             String line = br.readLine();
             while (line != null) {
-                log.info("Loading theatre: " + line);
                 String[] values = line.split(",");
                 Integer theatreId = Integer.parseInt(values[0]);
                 String name = values[1];
