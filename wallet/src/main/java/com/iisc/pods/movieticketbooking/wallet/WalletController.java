@@ -1,5 +1,6 @@
 package com.iisc.pods.movieticketbooking.wallet;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class WalletController {
     public ResponseEntity<WalletResponse> getWalletDetails(@PathVariable("user_id") Integer userId) {
         Wallet wallet = walletService.getWalletByUserId(userId);
         if (wallet != null) {
-            return ResponseEntity.ok(new WalletResponse(userId, wallet.getBalance()));
+            return ResponseEntity.ok(new ResponseEntity<Wallet>(userId, wallet.getBalance()));
         } else {
             return ResponseEntity.notFound().build();
         }

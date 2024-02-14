@@ -33,15 +33,11 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        ResponseEntity<User> responseEntity;
-        try {
+    public ResponseEntity<User> createUser(@RequestBody UserResponse user) {
+        //ResponseEntity<User> responseEntity;
+
             User savedUser = userService.create(user);
-            responseEntity = new ResponseEntity<>(savedUser, HttpStatus.CREATED);
-        } catch (BadRequestException e) {
-            responseEntity = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        return responseEntity;
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
     @DeleteMapping("/users/{id}")
