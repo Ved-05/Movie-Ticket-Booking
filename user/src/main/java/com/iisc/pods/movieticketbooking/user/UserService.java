@@ -14,10 +14,6 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    //public UserService(UserRepository userRepository) {
-   //     this.userRepository = userRepository;
-    //}
-
     /**
      * Create a new user.
      *
@@ -25,14 +21,12 @@ public class UserService {
      * @return Created user object.
      * @throws BadRequestException If there is an issue serving the request.
      */
-    public User create(UserResponse user) {
-
-    User saveduser = new User();
-    saveduser.setName(user.getName());
-    saveduser.setEmail(user.getEmail());
-    userRepository.save(saveduser);
-    return saveduser;
-
+    public User create(User user) {
+        try {
+            return userRepository.save(user);
+        } catch (Exception e) {
+            throw new BadRequestException("Issue serving request. Please check message for more details. " + e.getMessage());
+        }
     }
 
     /**

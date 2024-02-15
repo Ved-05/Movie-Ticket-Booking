@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 
 /**
@@ -14,6 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class Show {
     @Id
     @GeneratedValue
@@ -38,16 +40,5 @@ public class Show {
         this.title = title;
         this.price = price;
         this.seats_available = seats_available;
-    }
-
-    @Override
-    public String toString() {
-        return "Show{" +
-                "id=" + show_id +
-                ", theatre=" + theatre +
-                ", title='" + title + '\'' +
-                ", price=" + price +
-                ", seats_available=" + seats_available +
-                '}';
     }
 }

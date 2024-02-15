@@ -13,17 +13,8 @@ import java.util.List;
 @Service
 public class TheatreService {
 
-    private final TheatreRepository theatreRepository;
-
-    /**
-     * Constructor for TheatreService
-     *
-     * @param theatreRepository Repository for theatre related operations
-     */
     @Autowired
-    public TheatreService(TheatreRepository theatreRepository) {
-        this.theatreRepository = theatreRepository;
-    }
+    private TheatreRepository theatreRepository;
 
     /**
      * Get all theatres from the repository

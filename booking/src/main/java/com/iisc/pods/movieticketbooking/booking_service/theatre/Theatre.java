@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Collection;
 
@@ -15,9 +16,11 @@ import java.util.Collection;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class Theatre {
-    private @Id
-    @GeneratedValue Integer theatre_id;
+    @Id
+    @GeneratedValue
+    private Integer theatre_id;
     private String name;
     private String location;
 
@@ -30,14 +33,5 @@ public class Theatre {
     public Theatre(String name, String location) {
         this.name = name;
         this.location = location;
-    }
-
-    @Override
-    public String toString() {
-        return "Theatre{" +
-                "id=" + theatre_id +
-                ", name='" + name + '\'' +
-                ", location='" + location + '\'' +
-                '}';
     }
 }

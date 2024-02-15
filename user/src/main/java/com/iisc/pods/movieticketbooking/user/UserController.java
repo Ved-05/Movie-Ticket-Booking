@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
  * Controller for user related operations.
  */
 @RestController
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -20,7 +21,12 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/users/{id}")
+    /**
+     * Get user by id.
+     * @param id user id
+     * @return user details if found, else status code 404 for not found
+     */
+    @GetMapping("/{id}")
     public ResponseEntity<User> getUser(@PathVariable Integer id) {
         ResponseEntity<User> responseEntity;
         try {
@@ -32,15 +38,29 @@ public class UserController {
         return responseEntity;
     }
 
-    @PostMapping("/users")
-    public ResponseEntity<User> createUser(@RequestBody UserResponse user) {
-        //ResponseEntity<User> responseEntity;
-
+    /**
+     * Create a new user.
+     * @param user user details
+     * @return user details with status code 201 if created, else status code 400 for invalid request
+     */
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        ResponseEntity<User> responseEntity;
+        try {
             User savedUser = userService.create(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+            responseEntity = new ResponseEntity<>(savedUser, HttpStatus.CREATED);
+        } catch (BadRequestException e) {
+            responseEntity = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return responseEntity;
     }
 
-    @DeleteMapping("/users/{id}")
+    /**
+     * Deletes the user by user id.
+     * @param id user id
+     * @return status code 200 if deleted, else status code 404 if user not found
+     */
+    @DeleteMapping("/{id}")
     public ResponseEntity<User> deleteUser(@PathVariable Integer id) {
         ResponseEntity<User> responseEntity;
         try {
@@ -52,7 +72,11 @@ public class UserController {
         return responseEntity;
     }
 
-    @DeleteMapping("/users")
+    /**
+     * Deletes all users.
+     * @return status code 200 if deleted, else 500
+     */
+    @DeleteMapping
     public ResponseEntity<User> delete() {
         ResponseEntity<User> responseEntity;
         try {

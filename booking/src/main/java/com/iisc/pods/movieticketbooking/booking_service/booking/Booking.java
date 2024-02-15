@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Resource representing a booking in the system.
@@ -13,9 +14,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class Booking {
-    private @Id @GeneratedValue Integer id;
-    private @ManyToOne @JoinColumn(name = "show_id") Show show;
+    @Id
+    @GeneratedValue
+    private Integer id;
+    private Integer show_id;
     private Integer user_id;
     private Integer seats_booked;
 
@@ -26,19 +30,9 @@ public class Booking {
      * @param user_id      Foreign key to the user.
      * @param seats_booked Number of seats booked.
      */
-    public Booking(Show show, Integer user_id, Integer seats_booked) {
-        this.show = show;
+    public Booking(Integer show_id, Integer user_id, Integer seats_booked) {
+        this.show_id = show_id;
         this.user_id = user_id;
         this.seats_booked = seats_booked;
-    }
-
-    @Override
-    public String toString() {
-        return "Booking{" +
-                "id=" + id +
-                ", show=" + show +
-                ", user_id=" + user_id +
-                ", seats_booked=" + seats_booked +
-                '}';
     }
 }

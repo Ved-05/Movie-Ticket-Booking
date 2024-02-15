@@ -18,19 +18,11 @@ import java.util.List;
 @Service
 public class ShowService {
 
-    private final ShowRepository showRepository;
-    private final TheatreService theatreService;
-
-    /**
-     * Constructor for ShowService
-     *
-     * @param showRepository Repository for Show
-     */
     @Autowired
-    public ShowService(ShowRepository showRepository, TheatreService theatreService) {
-        this.showRepository = showRepository;
-        this.theatreService = theatreService;
-    }
+    private ShowRepository showRepository;
+
+    @Autowired
+    private TheatreService theatreService;
 
     /**
      * Get all shows from the repository
@@ -85,7 +77,17 @@ public class ShowService {
         }
     }
 
-    public void resetAllShows() {
-        init();
+    /**
+     * Update show seats available
+     *
+     * @param showId      Id of the show
+     * @param seatsBooked Seats booked
+     */
+    public void updateShowSeats(Integer showId, Integer seatsBooked) {
+        Show showById = showRepository.findById(showId).orElseThrow(
+                () -> new ShowNotFoundException(showId)
+        );
+        showById.setSeats_available(showById.getSeats_available() + seatsBooked);
+        showRepository.save(showById);
     }
 }
