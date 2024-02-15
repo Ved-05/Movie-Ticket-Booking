@@ -2,7 +2,7 @@ package com.iisc.pods.movieticketbooking.booking_service.booking;
 
 import com.iisc.pods.movieticketbooking.booking_service.show.Show;
 import com.iisc.pods.movieticketbooking.booking_service.show.ShowService;
-import com.iisc.pods.movieticketbooking.booking_service.rest.WalletServiceByRest;
+import com.iisc.pods.movieticketbooking.booking_service.rest.RestService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ public class BookingService {
     private ShowService showService;
 
     @Autowired
-    private WalletServiceByRest walletServiceByRest;
+    private RestService restService;
 
     /**
      * Create a new booking.
@@ -36,8 +36,10 @@ public class BookingService {
             throw new BadRequestException("Show " + show_id + " not found.");
         else if (showById.getSeats_available() < booking.getSeats_booked())
             throw new BadRequestException("Number of booked seats exceeds available seats for show " + show_id);
-
-        boolean isAmountDeducted = walletServiceByRest.deductAmountFromWallet(booking.getUser_id(),
+        else if (!restService.findUserById(booking.getUser_id()))
+            throw new BadRequestException("User " + booking.getUser_id() + " not found.");
+        // Deduct amount from wallet
+        boolean isAmountDeducted = restService.deductAmountFromWallet(booking.getUser_id(),
                 booking.getSeats_booked() * showById.getPrice());
         if (!isAmountDeducted) throw new BadRequestException("Amount could not be deducted from wallet.");
         showById.setSeats_available(showById.getSeats_available() - booking.getSeats_booked());
@@ -65,7 +67,7 @@ public class BookingService {
         for (Booking booking : bookings) {
             showService.updateShowSeats(booking.getShow_id(), booking.getSeats_booked());
             Show show = showService.getShowById(booking.getShow_id());
-            boolean isAmountRefunded = walletServiceByRest.refundAmount(booking.getUser_id(),
+            boolean isAmountRefunded = restService.refundAmount(booking.getUser_id(),
                     booking.getSeats_booked() * show.getPrice());
             if (!isAmountRefunded)
                 throw new BadRequestException("Amount could not be refunded to wallet for user " + booking.getUser_id());

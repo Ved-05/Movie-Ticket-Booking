@@ -15,12 +15,14 @@ import org.springframework.http.ResponseEntity;
  */
 @Slf4j
 @Service
-public class WalletServiceByRest {
+public class RestService {
 
     private final RestTemplate restTemplate;
-    private static final String WALLET_SERVICE_URL = "http://localhost:8082/wallets/";
+    private static final String BASE_URL = "http://host.docker.internal";
+    private static final String WALLET_SERVICE_URL = BASE_URL + ":8082/wallets/";
+    private static final String USER_SERVICE_URL = BASE_URL + ":8080/users/";
 
-    WalletServiceByRest() {
+    RestService() {
         restTemplate = new RestTemplate();
     }
 
@@ -60,4 +62,15 @@ public class WalletServiceByRest {
         return response.getStatusCode().is2xxSuccessful();
     }
 
+    /**
+     * Get user by id.
+     *
+     * @param id user id
+     * @return user details if found, else status code 404 for not found
+     */
+    public boolean findUserById(Integer id) {
+        String url = USER_SERVICE_URL + "{id}";
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, null, String.class, id);
+        return response.getStatusCode().is2xxSuccessful();
+    }
 }

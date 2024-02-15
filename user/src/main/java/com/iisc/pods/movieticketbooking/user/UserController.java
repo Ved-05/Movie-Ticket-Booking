@@ -23,6 +23,7 @@ public class UserController {
 
     /**
      * Get user by id.
+     *
      * @param id user id
      * @return user details if found, else status code 404 for not found
      */
@@ -40,6 +41,7 @@ public class UserController {
 
     /**
      * Create a new user.
+     *
      * @param user user details
      * @return user details with status code 201 if created, else status code 400 for invalid request
      */
@@ -57,12 +59,13 @@ public class UserController {
 
     /**
      * Deletes the user by user id.
+     *
      * @param id user id
      * @return status code 200 if deleted, else status code 404 if user not found
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<User> deleteUser(@PathVariable Integer id) {
-        ResponseEntity<User> responseEntity;
+    public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
+        ResponseEntity<Void> responseEntity;
         try {
             userService.deleteById(id);
             responseEntity = new ResponseEntity<>(HttpStatus.OK);
@@ -74,11 +77,12 @@ public class UserController {
 
     /**
      * Deletes all users.
+     *
      * @return status code 200 if deleted, else 500
      */
     @DeleteMapping
-    public ResponseEntity<User> delete() {
-        ResponseEntity<User> responseEntity;
+    public ResponseEntity<Void> delete() {
+        ResponseEntity<Void> responseEntity;
         try {
             userService.deleteAll();
             responseEntity = new ResponseEntity<>(HttpStatus.OK);

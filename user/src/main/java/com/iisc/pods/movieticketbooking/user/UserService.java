@@ -2,6 +2,7 @@ package com.iisc.pods.movieticketbooking.user;
 
 import com.iisc.pods.movieticketbooking.user.exceptions.BadRequestException;
 import com.iisc.pods.movieticketbooking.user.exceptions.UserNotExistException;
+import com.iisc.pods.movieticketbooking.user.rest.RestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RestService restService;
 
     /**
      * Create a new user.
@@ -49,17 +53,28 @@ public class UserService {
      * @throws UserNotExistException If user with id does not exist.
      */
     public void deleteById(Integer id) {
-        if (this.getById(id) != null)
-            userRepository.deleteById(id);
-        else
+        if (this.getById(id) != null) {
+            deleteAllRecordsForUser(id);
+        } else
             throw new UserNotExistException("User with id " + id + " does not exist");
     }
 
     /**
-     * Delete all users.
+     * Delete all users and related records.
      */
     public void deleteAll() {
-        userRepository.deleteAll();
+        if (restService.deleteBookings() && restService.deleteWallet())
+            userRepository.deleteAll();
+    }
+
+    /**
+     * Delete user by id and all related records.
+     *
+     * @param userId ID of the user.
+     */
+    private void deleteAllRecordsForUser(Integer userId) {
+        if (restService.deleteBookings(userId) && restService.deleteWallet(userId))
+            userRepository.deleteById(userId);
     }
 }
 
