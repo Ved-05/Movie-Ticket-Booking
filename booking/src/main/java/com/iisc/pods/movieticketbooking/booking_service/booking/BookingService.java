@@ -2,7 +2,7 @@ package com.iisc.pods.movieticketbooking.booking_service.booking;
 
 import com.iisc.pods.movieticketbooking.booking_service.show.Show;
 import com.iisc.pods.movieticketbooking.booking_service.show.ShowService;
-import com.iisc.pods.movieticketbooking.booking_service.utils.WalletServiceByRest;
+import com.iisc.pods.movieticketbooking.booking_service.rest.WalletServiceByRest;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
