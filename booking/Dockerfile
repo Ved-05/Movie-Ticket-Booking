@@ -1,8 +1,10 @@
 FROM openjdk:17-jdk-alpine
 WORKDIR /movie-ticket-booking
-RUN apk --no-cache add maven
-RUN mvn package
-COPY target/*.jar /movie-ticket-booking/booking-service.jar
+COPY pom.xml .
+COPY src src
 COPY data /movie-ticket-booking/data
+RUN apk --no-cache add maven
+RUN mvn clean package
+COPY target/*.jar booking-service.jar
 EXPOSE 8081
-ENTRYPOINT ["java","-jar","/movie-ticket-booking/booking-service.jar"]
+ENTRYPOINT ["java","-jar","booking-service.jar"]
