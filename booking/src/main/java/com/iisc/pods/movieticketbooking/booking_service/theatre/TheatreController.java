@@ -9,11 +9,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+
 /**
  * Controller for Booking entity
  */
-@RequestMapping("/theatres")
 @RestController
+@RequestMapping("/theatres")
 public class TheatreController {
     @Autowired
     private TheatreService theatreService;
