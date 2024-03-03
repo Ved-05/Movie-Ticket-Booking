@@ -5,6 +5,8 @@ import com.iisc.pods.movieticketbooking.user.exceptions.UserNotExistException;
 import com.iisc.pods.movieticketbooking.user.rest.RestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service for user related operations.
@@ -25,6 +27,7 @@ public class UserService {
      * @return Created user object.
      * @throws BadRequestException If there is an issue serving the request.
      */
+    @Transactional(isolation= Isolation.SERIALIZABLE)
     public User create(User user) {
         try {
             return userRepository.save(user);
@@ -40,6 +43,7 @@ public class UserService {
      * @return User object.
      * @throws UserNotExistException If user with id does not exist.
      */
+    @Transactional(readOnly = true)
     public User getById(Integer id) {
         return userRepository.findById(id).orElseThrow(
                 () -> new UserNotExistException("User with id " + id + " does not exist")
@@ -52,6 +56,7 @@ public class UserService {
      * @param id ID of the user.
      * @throws UserNotExistException If user with id does not exist.
      */
+    @Transactional(isolation= Isolation.SERIALIZABLE)
     public void deleteById(Integer id) {
         if (this.getById(id) != null) {
             deleteAllRecordsForUser(id);

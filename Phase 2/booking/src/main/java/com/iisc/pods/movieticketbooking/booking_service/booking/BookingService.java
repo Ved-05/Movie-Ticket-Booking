@@ -6,6 +6,8 @@ import com.iisc.pods.movieticketbooking.booking_service.rest.RestService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ public class BookingService {
      * @return Created booking object.
      * @throws BadRequestException If there is an issue serving the request.
      */
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Booking create(Booking booking) throws BadRequestException {
         Integer show_id = booking.getShow_id();
         Show showById = showService.getShowById(show_id);
@@ -51,6 +54,7 @@ public class BookingService {
      *
      * @param userId user id
      */
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteByUserId(Integer userId) throws BadRequestException {
         List<Booking> bookingsByUserId = bookingRepository.findByUserId(userId)
                 .orElseThrow(() -> new BadRequestException("Booking for user " + userId + " not found."));
@@ -82,6 +86,7 @@ public class BookingService {
      * @param userId user id
      * @return List of bookings for user id if found, else empty list
      */
+    @Transactional(readOnly = true)
     public List<Booking> getBookingByUserId(Integer userId) {
         return bookingRepository.findByUserId(userId).orElse(Collections.emptyList());
     }
@@ -92,6 +97,7 @@ public class BookingService {
      * @param userId user id
      * @param showId show id
      */
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteByUserIdAndShowId(Integer userId, Integer showId) throws BadRequestException {
         List<Booking> bookingsByUserAndShowId = bookingRepository.findByUserIdAndShowId(userId, showId)
                 .orElseThrow(() -> new BadRequestException("Booking for user " + userId + " & show " + showId + " not found."));

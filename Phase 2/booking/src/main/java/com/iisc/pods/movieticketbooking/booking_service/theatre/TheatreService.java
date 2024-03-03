@@ -3,6 +3,7 @@ package com.iisc.pods.movieticketbooking.booking_service.theatre;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -21,6 +22,7 @@ public class TheatreService {
      *
      * @return List of all theatres
      */
+    @Transactional(readOnly = true)
     public List<Theatre> getAllTheatres() {
         return theatreRepository.findAll();
     }
@@ -32,6 +34,7 @@ public class TheatreService {
      * @return Theatre object with the given id
      * @throws TheatreNotFoundException If theatre with id does not exist.
      */
+    @Transactional(readOnly = true)
     public Theatre getTheatreById(Integer theatreId) throws TheatreNotFoundException {
         return theatreRepository.findById(theatreId).orElseThrow(
                 () -> new TheatreNotFoundException(theatreId)

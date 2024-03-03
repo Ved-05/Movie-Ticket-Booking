@@ -1,7 +1,16 @@
-FROM openjdk:17-jdk-alpine
-WORKDIR /movie-ticket-booking
-COPY . ${WORKDIR}
-RUN ./mvnw clean package
-RUN cp target/*.jar app.jar
-EXPOSE 8081
-ENTRYPOINT ["java","-jar","app.jar"]
+FROM eclipse-temurin:17
+
+COPY pom.xml  /pom.xml
+COPY src      /src
+COPY target   /target
+COPY data   /data
+
+RUN apt-get update
+
+RUN apt-get -y install maven
+
+RUN mvn -Dmaven.test.skip=true package
+
+RUN mv /target/*.jar /target/app.jar
+
+ENTRYPOINT ["java", "-jar", "/target/app.jar"]

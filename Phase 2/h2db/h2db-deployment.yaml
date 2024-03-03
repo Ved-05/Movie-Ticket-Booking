@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: h2db
+  name: suvedg-h2db-service
 spec:
   replicas: 1
   selector:
@@ -13,8 +13,8 @@ spec:
         app: h2db
     spec:
       containers:
-        - name: h2db
-          image: h2db:latest
+        - name: suvedg-h2db-service
+          image: suvedg-h2db-service:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 9082
@@ -27,7 +27,7 @@ spec:
               memory: 512Mi
           env: # Add environment variables if needed
             - name: DB_HOST
-              value: h2db-service # Assuming you create a Service for H2
+              value: suvedg-h2db-service # Assuming you create a Service for H2
 
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst

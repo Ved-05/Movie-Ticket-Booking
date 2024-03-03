@@ -1,6 +1,5 @@
 package com.iisc.pods.movieticketbooking.user;
 
-import com.iisc.pods.movieticketbooking.user.exceptions.BadRequestException;
 import com.iisc.pods.movieticketbooking.user.exceptions.UserNotExistException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +52,7 @@ public class UserController {
         try {
             User savedUser = userService.create(user);
             responseEntity = new ResponseEntity<>(savedUser, HttpStatus.CREATED);
-        } catch (BadRequestException e) {
+        } catch (Exception e) {
             responseEntity = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return responseEntity;

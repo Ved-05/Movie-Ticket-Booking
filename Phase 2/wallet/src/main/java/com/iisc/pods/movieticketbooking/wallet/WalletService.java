@@ -3,6 +3,8 @@ package com.iisc.pods.movieticketbooking.wallet;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WalletService {
@@ -13,10 +15,11 @@ public class WalletService {
     /**
      * Get wallet by id.
      *
-     * @param userId Id of the user (Primary key)
+     * @param userId ID of the user (Primary key)
      * @return Wallet object for the user.
      * @throws IllegalArgumentException If wallet not found for the user id.
      */
+    @Transactional(readOnly = true)
     public Wallet getWalletById(Integer userId) {
         return walletRepository.findById(userId).orElseThrow(
                 () -> new IllegalArgumentException("Wallet not found for user id: " + userId)
@@ -26,11 +29,12 @@ public class WalletService {
     /**
      * Update wallet balance for the user by user id.
      *
-     * @param userId Id of the user (Primary key)
+     * @param userId ID of the user (Primary key)
      * @param action Action to be performed (debit/credit)
      * @param amount Amount to be debited/credited
      * @return Updated wallet object.
      */
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     public Wallet updateWalletBalance(Integer userId, String action, Integer amount) throws BadRequestException {
         Wallet wallet = walletRepository.findById(userId).orElse(new Wallet(userId, 0));
         Integer balance = wallet.getBalance();
@@ -49,9 +53,10 @@ public class WalletService {
     /**
      * Create a new wallet for the user
      *
-     * @param userId Id of the user (Primary key)
-     * @throws IllegalArgumentException If wallet does not exists for the user id.
+     * @param userId ID of the user (Primary key)
+     * @throws IllegalArgumentException If wallet does not exist for the user id.
      */
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void deleteWallet(Integer userId) throws IllegalArgumentException {
         Wallet wallet = walletRepository.findById(userId).orElseThrow(
                 () -> new IllegalArgumentException("Wallet not found for user id: " + userId)

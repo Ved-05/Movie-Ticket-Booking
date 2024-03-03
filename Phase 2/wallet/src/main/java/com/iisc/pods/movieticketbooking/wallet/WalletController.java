@@ -1,7 +1,6 @@
 package com.iisc.pods.movieticketbooking.wallet;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +19,7 @@ public class WalletController {
     /**
      * Create a new wallet for the user
      *
-     * @param userId Id of the user (Primary key)
+     * @param userId ID of the user (Primary key)
      * @return Created wallet with status code 200 if created, else status code 400 for invalid request
      */
     @GetMapping("/{user_id}")
@@ -29,7 +28,7 @@ public class WalletController {
         try {
             Wallet wallet = walletService.getWalletById(userId);
             responseEntity = new ResponseEntity<>(wallet, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             log.error("Error getting wallet details for user id: " + userId, e);
             responseEntity = ResponseEntity.notFound().build();
         }
@@ -39,7 +38,7 @@ public class WalletController {
     /**
      * Update wallet balance for the user by user id.
      *
-     * @param user_id     Id of the user (Primary key)
+     * @param user_id     ID of the user (Primary key)
      * @param requestBody Request body with action and amount
      * @return Updated wallet with status code 200 if updated, else status code 400 for invalid request
      */
@@ -53,7 +52,7 @@ public class WalletController {
             int amount = (int) requestBody.get("amount");
             Wallet updatedWallet = walletService.updateWalletBalance(user_id, action, amount);
             responseEntity = new ResponseEntity<>(updatedWallet, HttpStatus.OK);
-        } catch (BadRequestException e) {
+        } catch (Exception e) {
             log.error("Error updating wallet balance for user id: " + user_id, e);
             responseEntity = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -63,7 +62,7 @@ public class WalletController {
     /**
      * Delete wallet for the user by user id.
      *
-     * @param userId Id of the user (Primary key)
+     * @param userId ID of the user (Primary key)
      * @return status code 200 if deleted, else status code 404 for not found
      */
     @DeleteMapping("/{user_id}")
@@ -72,7 +71,7 @@ public class WalletController {
         try {
             walletService.deleteWallet(userId);
             responseEntity = ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             log.error("Error deleting wallet for user id: " + userId, e);
             responseEntity = ResponseEntity.notFound().build();
         }

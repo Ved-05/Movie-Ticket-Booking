@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: h2db-service
+  name: suvedg-h2db-service
 spec:
   selector:
     app: h2db # Adjust label if needed

@@ -1,9 +1,6 @@
 package com.iisc.pods.movieticketbooking.user;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,6 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
+@Table(name = "MY_USERS")
 public class User {
     @Id
     @GeneratedValue

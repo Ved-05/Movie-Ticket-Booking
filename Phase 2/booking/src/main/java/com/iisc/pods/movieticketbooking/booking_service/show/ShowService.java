@@ -7,6 +7,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -29,6 +31,7 @@ public class ShowService {
      * @param theatreId Id of the theatre
      * @return List of all shows
      */
+    @Transactional(readOnly = true)
     public List<Show> getAllShowsByTheatreId(Integer theatreId) throws TheatreNotFoundException {
         if (theatreService.getTheatreById(theatreId) != null) {
             return showRepository.findAllByTheatreId(theatreId);
@@ -42,6 +45,7 @@ public class ShowService {
      *
      * @return List of all shows
      */
+    @Transactional(readOnly = true)
     public Show getShowById(Integer showId) throws ShowNotFoundException {
         return showRepository.findById(showId).orElseThrow(
                 () -> new ShowNotFoundException(showId)
@@ -52,6 +56,7 @@ public class ShowService {
      * Initialize the show repository with a shows from csv file.
      */
     @PostConstruct
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void init() {
         theatreService.init();
         log.info("Loading shows from CSV file");
@@ -82,6 +87,7 @@ public class ShowService {
      * @param showId      Id of the show
      * @param seatsBooked Seats booked
      */
+    @Transactional(readOnly = true)
     public void updateShowSeats(Integer showId, Integer seatsBooked) {
         Show showById = showRepository.findById(showId).orElseThrow(
                 () -> new ShowNotFoundException(showId)

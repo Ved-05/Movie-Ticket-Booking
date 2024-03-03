@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suvedg-booking-service
+spec:
+  replicas: 1 # Define the desired number of replicas
+  selector:
+    matchLabels:
+      app: movie-ticket-booking
+  template:
+    metadata:
+      labels:
+        app: movie-ticket-booking
+    spec:
+      containers:
+        - name: suvedg-booking-service
+          image: suvedg-booking-service:latest
+          imagePullPolicy: Never
+#          ports:
+#            - containerPort: 8080
+          env: # Add environment variables for database connection
+            - name: SPRING_APPLICATION_JSON
+              value: '{ 
+                "spring.profiles.active": "production", 
+                "spring.datasource.url": "jdbc:h2:tcp://suvedg-h2db-service:9082/~/movie_ticket_booking;AUTO_SERVER=true;DEFAULT_LOCK_TIMEOUT=10000", 
+                "spring.datasource.driverClassName": "org.h2.Driver", 
+                "spring.datasource.username": "sa", "spring.datasource.password": "", 
+                "spring.jpa.show-sql": "true", 
+                "spring.jpa.hibernate.ddl-auto": "update", 
+                "spring.jpa.properties.hibernate.dialect": "org.hibernate.dialect.H2Dialect", 
+                "server.port": "8080" 
+              }'
+            - name: USER_SERVICE_URL
+              value: "http://suvedg-user-service:8080"
+            - name: BOOKING_SERVICE_URL
+              value: "http://suvedg-booking-service:8081"
+            - name: WALLET_SERVICE_URL
+              value: "http://suvedg-wallet-service:8082"
+          resources:
+            requests:
+              cpu: 100m # Resource requests for the pod
+              memory: 256Mi
+            limits:
+              cpu: 1000m # Resource limits for the pod
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
