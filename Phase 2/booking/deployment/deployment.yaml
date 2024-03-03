@@ -16,8 +16,8 @@ spec:
         - name: suvedg-booking-service
           image: suvedg-booking-service:latest
           imagePullPolicy: Never
-#          ports:
-#            - containerPort: 8080
+          ports:
+            - containerPort: 8081
           env: # Add environment variables for database connection
             - name: SPRING_APPLICATION_JSON
               value: '{ 

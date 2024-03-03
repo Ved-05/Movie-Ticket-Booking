@@ -17,7 +17,7 @@ spec:
           image: suvedg-wallet-service:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8080
+            - containerPort: 8082
           env: # Add environment variables for database connection
             - name: SPRING_APPLICATION_JSON
               value: '{ 
