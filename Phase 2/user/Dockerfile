@@ -12,4 +12,6 @@ RUN mvn -Dmaven.test.skip=true package
 
 RUN mv /target/*.jar /target/app.jar
 
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "/target/app.jar"]

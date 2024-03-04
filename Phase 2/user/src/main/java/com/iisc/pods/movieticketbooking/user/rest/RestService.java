@@ -1,7 +1,6 @@
 package com.iisc.pods.movieticketbooking.user.rest;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,11 +14,9 @@ public class RestService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${WALLET_SERVICE_URL}")
-    private String WALLET_SERVICE_URL;
+    private final String WALLET_SERVICE_URL = "http://suvedg-wallet-service:8082/wallets";
 
-    @Value("${BOOKING_SERVICE_URL}")
-    private String BOOKING_SERVICE_URL;
+    private final String BOOKING_SERVICE_URL = "http://suvedg-booking-service:8081/bookings";
 
     RestService() {
         restTemplate = new RestTemplate();

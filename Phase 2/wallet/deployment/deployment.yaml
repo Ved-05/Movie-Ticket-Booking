@@ -28,7 +28,7 @@ spec:
                 "spring.jpa.show-sql": "true", 
                 "spring.jpa.hibernate.ddl-auto": "update", 
                 "spring.jpa.properties.hibernate.dialect": "org.hibernate.dialect.H2Dialect", 
-                "server.port": "8080" 
+                "server.port": "8082" 
               }'
             - name: USER_SERVICE_URL
               value: "http://suvedg-user-service:8080"
