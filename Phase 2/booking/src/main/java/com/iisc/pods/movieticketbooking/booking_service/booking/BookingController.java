@@ -45,7 +45,7 @@ public class BookingController {
         ResponseEntity<Booking> responseEntity;
         try {
             Booking savedBooking = bookingService.create(booking);
-            responseEntity = new ResponseEntity<>(savedBooking, HttpStatus.CREATED);
+            responseEntity = new ResponseEntity<>(savedBooking, HttpStatus.OK);
         } catch (Exception e) {
             log.error("Error creating booking", e);
             log.info("Sending back " + HttpStatus.BAD_REQUEST);

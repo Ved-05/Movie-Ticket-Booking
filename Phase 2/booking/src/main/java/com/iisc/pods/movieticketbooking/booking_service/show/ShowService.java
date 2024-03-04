@@ -61,7 +61,7 @@ public class ShowService {
         theatreService.init();
         log.info("Loading shows from CSV file");
         try {
-            BufferedReader br = new BufferedReader(new FileReader("/Users/suvedghanmode/IISc/Courses/PoDS/Movie-TIcket-Booking/Phase 2/booking/data/shows.csv"));
+            BufferedReader br = new BufferedReader(new FileReader("data/shows.csv"));
             br.readLine(); // skip header
             String line = br.readLine();
             while (line != null) {

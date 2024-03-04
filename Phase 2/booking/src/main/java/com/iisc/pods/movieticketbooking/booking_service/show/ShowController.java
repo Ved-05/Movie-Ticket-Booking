@@ -36,11 +36,18 @@ public class ShowController {
     }
 
     @GetMapping("/{showId}")
-    public ResponseEntity<Show> getShowById(@PathVariable Integer showId) throws ShowNotFoundException {
-        ResponseEntity<Show> responseEntity;
+    public ResponseEntity<ResponseShow> getShowById(@PathVariable Integer showId) throws ShowNotFoundException {
+        ResponseEntity<ResponseShow> responseEntity;
         try {
             Show showById = showService.getShowById(showId);
-            responseEntity = new ResponseEntity<>(showById, HttpStatus.OK);
+            ResponseShow responseShow = new ResponseShow(
+                    showById.getId(),
+                    showById.getTheatre().getTheatre_id(),
+                    showById.getTitle(),
+                    showById.getPrice(),
+                    showById.getSeats_available()
+            );
+            responseEntity = new ResponseEntity<>(responseShow, HttpStatus.OK);
         } catch (ShowNotFoundException e) {
             responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
