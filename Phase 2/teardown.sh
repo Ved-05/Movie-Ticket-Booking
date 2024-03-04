@@ -15,6 +15,9 @@ minikube kubectl -- delete deployment suvedg-booking-service
 minikube kubectl -- delete deployment suvedg-wallet-service
 minikube kubectl -- delete deployment suvedg-h2db-service
 
+# Delete hpa
+minikube kubectl -- delete hpa suvedg-booking-service-hpa
+
 # Delete the images
 docker image rm suvedg-user-service
 docker image rm suvedg-booking-service

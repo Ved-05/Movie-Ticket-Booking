@@ -20,6 +20,7 @@ minikube kubectl -- apply -f h2db/h2db-service.yaml
   # Movie Ticket Booking Services
 minikube kubectl -- apply -f user/deployment/deployment.yaml
 minikube kubectl -- apply -f booking/deployment/deployment.yaml
+minikube kubectl -- apply -f booking/deployment/hpa.yaml
 minikube kubectl -- apply -f wallet/deployment/deployment.yaml
 
   # Expose the services
