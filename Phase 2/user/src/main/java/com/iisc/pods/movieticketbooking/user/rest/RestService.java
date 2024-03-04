@@ -32,7 +32,7 @@ public class RestService {
      * @return true if bookings are deleted, else false
      */
     public boolean deleteBookings(Integer userId) {
-        String url = BOOKING_SERVICE_URL + "{user_id}";
+        String url = BOOKING_SERVICE_URL + "/users/{user_id}";
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, null, String.class,
                 userId);
         return response.getStatusCode().is2xxSuccessful();
@@ -53,11 +53,11 @@ public class RestService {
     /**
      * Delete wallet records for the user
      *
-     * @param userId Id of the user
+     * @param userId ID of the user
      * @return true if wallet is deleted, else false
      */
     public boolean deleteWallet(Integer userId) {
-        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL + "{user_id}", HttpMethod.DELETE,
+        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL + "/{user_id}", HttpMethod.DELETE,
                 null, String.class, userId);
         return response.getStatusCode().is2xxSuccessful();
     }
