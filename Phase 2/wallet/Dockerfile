@@ -2,7 +2,7 @@ FROM eclipse-temurin:17
 
 COPY pom.xml  /pom.xml
 COPY src      /src
-COPY target   /target
+#COPY target   /target
 
 RUN apt-get update
 
