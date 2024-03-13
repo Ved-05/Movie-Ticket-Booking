@@ -6,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: movie-ticket-booking
+      app: suvedg-wallet-service
   template:
     metadata:
       labels:
-        app: movie-ticket-booking
+        app: suvedg-wallet-service
     spec:
       containers:
         - name: suvedg-wallet-service
