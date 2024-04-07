@@ -87,7 +87,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
                 showActors.put(showId,
                         getContext().spawn(
                                 ShowActor.create(
-                                        new Show(showId, theatres.get(theatreId), movieName, price, seatsAvailable)
+                                        new Show(showId, theatreId, movieName, price, seatsAvailable)
                                 ),
                                 "ShowActor-" + showId));
                 this.theatreIdToShowId.get(theatreId).add(showId);
@@ -180,7 +180,6 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
      * @return Behavior of the actor
      */
     private Behavior<Request> onDeleteBookingByUser(DeleteBookingByUser request) {
-        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
         log.info("Forwarding delete by user id request to the show actors");
         // Delete bookings from all the show actors for user id. Respond if all the bookings are deleted.
         boolean isActionFailed = this.showActors.values().stream()
@@ -221,7 +220,6 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
      * @return Behavior of the actor
      */
     private Behavior<Request> onGetBookingsByUser(GetBookingsByUser request) {
-        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
         log.info("Forwarding user id to the show actors");
         // Get booking details from the show actors and then combine the results to a list
         List<Booking> bookingsForUser = this.showActors.values().stream()
@@ -269,7 +267,6 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
             request.replyTo.tell(Collections.emptyList());
             return this;
         }
-        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
         log.info("Forwarding shows by theatre id to the show actors");
         // Get show details for all shows from the show actors and then combine the results to a list
         List<Show> shows = this.theatreIdToShowId.get(request.theatreId).stream()

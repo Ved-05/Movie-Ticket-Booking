@@ -1,11 +1,8 @@
-import requests
 import random
 import sys
-from http import HTTPStatus
 from threading import Thread
 
 from user import *
-from booking import *
 from wallet import *
 
 debited_amount = 0

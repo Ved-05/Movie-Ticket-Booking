@@ -6,8 +6,8 @@ bookingServiceURL = "http://localhost:8081"
 walletServiceURL = "http://localhost:8082"
 
 def main():
-    # delete_users()
-    # delete_wallets()
+    delete_users()
+    delete_wallets()
     
     name = "John Doe"
     email = "johndoe@mail.com"

@@ -179,11 +179,11 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
      * @param booking Booking object to be reverted
      */
     private void revertBooking(Booking booking) {
+        this.show = this.show.revertBookedSeats(booking.seats_booked());
         if (!updateWallet(booking.user_id(), booking.seats_booked() * this.show.price(), true)) {
             log.info("Amount could not be refunded to wallet for user " + booking.user_id());
             throw new RuntimeException("Amount could not be refunded to wallet for user " + booking.user_id());
         }
-        this.show = this.show.revertBookedSeats(this.show.seats_available() + booking.seats_booked());
         this.bookings.remove(booking);
     }
 

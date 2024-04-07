@@ -1,4 +1,3 @@
-import requests
 from utils import *
 
 bookingServiceURL = "http://localhost:8081"
