@@ -41,4 +41,8 @@ public final class Show implements ActorModel {
     public void bookSeats(Integer bookedSeats) {
         this.seats_available -= bookedSeats;
     }
+
+    public void revertBookedSeats(Integer bookedSeats) {
+        this.seats_available += bookedSeats;
+    }
 }

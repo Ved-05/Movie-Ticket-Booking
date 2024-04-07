@@ -25,7 +25,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public sealed interface Request {
     }
 
-    public sealed interface Response extends Request {
+    public sealed interface ActionResponse extends Request {
     }
 
     public record GetShowsByTheatreId(Integer theatreId, ActorRef<List<Show>> replyTo) implements Request {
@@ -40,23 +40,23 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record CreateBooking(Booking booking, ActorRef<Request> replyTo) implements Request {
     }
 
-    public record DeleteBookingByUser(Integer userId, ActorRef<ActionPerformed> replyTo) implements Request {
+    public record DeleteBookingByUser(Integer userId, ActorRef<ActionResponse> replyTo) implements Request {
     }
 
     public record DeleteBookingByShowAndUserId(Integer userId, Integer showId,
-                                               ActorRef<ActionPerformed> replyTo) implements Request {
+                                               ActorRef<ActionResponse> replyTo) implements Request {
     }
 
-    public record DeleteAllBookings(ActorRef<ActionPerformed> replyTo) implements Request {
+    public record DeleteAllBookings(ActorRef<ActionResponse> replyTo) implements Request {
     }
 
     public record GetTheatres(ActorRef<List<Theatre>> replyTo) implements Request {
     }
 
-    public record ActionPerformed(String description) implements Response {
+    public record ActionPerformed(String description) implements ActionResponse {
     }
 
-    public record ActionFailed(String description) implements Response {
+    public record ActionFailed(String description) implements ActionResponse {
     }
 
     private BookingActor(ActorContext<Request> context) {
@@ -151,16 +151,46 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     }
 
     // TODO: Implement below methods.
-    private Behavior<Request> onDeleteAllBookings(DeleteAllBookings deleteAllBookings) {
-        return null;
+
+    /**
+     * Handles the delete all bookings request
+     *
+     * @param request DeleteAllBookings record
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onDeleteAllBookings(DeleteAllBookings request) {
+        this.showActors.values().forEach(showActor -> showActor.tell(new ShowActor.DeleteAllBookings(request.replyTo)));
+        request.replyTo.tell(new ActionPerformed("All bookings deleted."));
+        return this;
     }
 
     private Behavior<Request> onDeleteBookingByShowAndUserId(DeleteBookingByShowAndUserId deleteBookingByShowAndUserId) {
-        return null;
+        return this;
     }
 
-    private Behavior<Request> onDeleteBookingByUser(DeleteBookingByUser deleteBookingByUser) {
-        return null;
+    /**
+     * Handles the delete booking by user request.
+     *
+     * @param request DeleteBookingByUser record
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onDeleteBookingByUser(DeleteBookingByUser request) {
+        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
+        log.info("Forwarding delete by user id request to the show actors");
+        // Delete bookings from all the show actors for user id. Respond if all the bookings are deleted.
+        boolean isActionFailed = this.showActors.values().stream()
+                .map(showActor -> {
+                    CompletionStage<ActionResponse> completionStage = AskPattern.ask(showActor,
+                            ref -> new ShowActor.DeleteBookingForUser(request.userId, ref),
+                            Duration.ofSeconds(5), getContext().getSystem().scheduler());
+                    return completionStage.toCompletableFuture();
+                }).map(CompletableFuture::join)
+                .allMatch(actionResponse -> actionResponse instanceof ActionFailed);
+
+        ActionResponse actionStatus = isActionFailed ? new ActionFailed("Failed. Some bookings could not be deleted.") :
+                new ActionPerformed("All bookings deleted for user id: " + request.userId);
+        request.replyTo.tell(actionStatus);
+        return this;
     }
 
     /**

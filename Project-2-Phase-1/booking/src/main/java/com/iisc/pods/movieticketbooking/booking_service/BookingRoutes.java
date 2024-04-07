@@ -139,9 +139,8 @@ public class BookingRoutes {
                                                         path(PathMatchers.segment(), userId ->
                                                                 delete(() ->
                                                                         onSuccess(deleteAllBookingsForUser(userId), actionPerformed -> {
-                                                                            log.info("Bookings deletion status: " + actionPerformed.description());
-                                                                            if (actionPerformed.description().equals("Success")) {
-                                                                                return complete(StatusCodes.OK, "Bookings deleted successfully", Jackson.marshaller());
+                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
+                                                                                return complete(StatusCodes.OK, "Bookings deleted for " + userId + " successfully", Jackson.marshaller());
                                                                             } else {
                                                                                 return complete(StatusCodes.NOT_FOUND, "User not found", Jackson.marshaller());
                                                                             }
@@ -156,8 +155,7 @@ public class BookingRoutes {
                                                                 slash(PathMatchers.segment()), (userId, showId) ->
                                                                 delete(() ->
                                                                         onSuccess(deleteBookingsForUserInShow(userId, showId), actionPerformed -> {
-                                                                            log.info("Bookings deletion status: " + actionPerformed.description());
-                                                                            if (actionPerformed.description().equals("Success")) {
+                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
                                                                                 return complete(StatusCodes.OK, "Bookings deleted successfully", Jackson.marshaller());
                                                                             } else {
                                                                                 return complete(StatusCodes.NOT_FOUND, "User or show not found", Jackson.marshaller());
@@ -180,17 +178,17 @@ public class BookingRoutes {
         );
     }
 
-    private CompletionStage<BookingActor.ActionPerformed> deleteAllBookings() {
+    private CompletionStage<BookingActor.ActionResponse> deleteAllBookings() {
         return AskPattern.ask(bookingActor, BookingActor.DeleteAllBookings::new, askTimeout, scheduler);
     }
 
-    private CompletionStage<BookingActor.ActionPerformed> deleteBookingsForUserInShow(String userId, String showId) {
+    private CompletionStage<BookingActor.ActionResponse> deleteBookingsForUserInShow(String userId, String showId) {
         log.info("Deleting bookings for user: " + userId + " in show: " + showId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.DeleteBookingByShowAndUserId(
                 Integer.parseInt(userId), Integer.parseInt(showId), ref), askTimeout, scheduler);
     }
 
-    private CompletionStage<BookingActor.ActionPerformed> deleteAllBookingsForUser(String userId) {
+    private CompletionStage<BookingActor.ActionResponse> deleteAllBookingsForUser(String userId) {
         log.info("Deleting bookings for user: " + userId);
         return AskPattern.ask(bookingActor,
                 ref -> new BookingActor.DeleteBookingByUser(Integer.parseInt(userId), ref), askTimeout, scheduler);
@@ -210,6 +208,7 @@ public class BookingRoutes {
 
     /**
      * Get bookings for a user
+     *
      * @param userId User ID
      * @return CompletionStage of List of Bookings
      */
