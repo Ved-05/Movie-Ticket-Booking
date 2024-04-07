@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
@@ -193,13 +194,22 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         }
         // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
         log.info("Forwarding shows by theatre id to the show actors");
-        List<Show> shows = new ArrayList<>();
-        this.theatreIdToShowId.get(request.theatreId)
-                .forEach(showId -> {
+        // Get show details for all shows from the show actors and then combine the results to a list
+
+        List<Show> shows = this.theatreIdToShowId.get(request.theatreId).stream()
+                .map(showId -> {
                     log.info("Getting show by id: " + showId);
                     CompletionStage<ActorModel> completionStage = AskPattern.ask(showActors.get(showId),
                             ShowActor.GetShow::new, Duration.ofSeconds(5), getContext().getSystem().scheduler());
-                    completionStage.thenAccept(actorModel -> shows.add((Show) actorModel));
+                    return completionStage.toCompletableFuture();
+                }).map(CompletableFuture::join)
+                .map(show -> (Show) show)
+                .reduce(new ArrayList<>(), (acc, show) -> {
+                    acc.add(show);
+                    return acc;
+                }, (acc1, acc2) -> {
+                    acc1.addAll(acc2);
+                    return acc1;
                 });
         request.replyTo.tell(shows);
         return this;
