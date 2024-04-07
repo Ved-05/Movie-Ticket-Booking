@@ -92,7 +92,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>com.example.QuickstartApp</mainClass>
+                    <mainClass>com.iisc.pods.movieticketbooking.booking_service.App</mainClass>
                 </configuration>
             </plugin>
         </plugins>
