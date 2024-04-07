@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage;
 public class App {
     static void startHttpServer(Route route, ActorSystem<?> system) {
         CompletionStage<ServerBinding> futureBinding =
-                Http.get(system).newServerAt("localhost", 8081).bind(route);
+                Http.get(system).newServerAt("host.docker.internal", 8080).bind(route);
 
         futureBinding.whenComplete((binding, exception) -> {
             if (binding != null) {
