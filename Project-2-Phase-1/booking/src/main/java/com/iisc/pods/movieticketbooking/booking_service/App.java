@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage;
 public class App {
     static void startHttpServer(Route route, ActorSystem<?> system) {
         CompletionStage<ServerBinding> futureBinding =
-                Http.get(system).newServerAt("localhost", 8080).bind(route);
+                Http.get(system).newServerAt("localhost", 8081).bind(route);
 
         futureBinding.whenComplete((binding, exception) -> {
             if (binding != null) {
@@ -38,7 +38,7 @@ public class App {
     public static void main(String[] args) throws Exception {
         //#server-bootstrapping
         Behavior<NotUsed> rootBehavior = Behaviors.setup(context -> {
-            ActorRef<BookingActor.Command> bookingActor =
+            ActorRef<BookingActor.Request> bookingActor =
                     context.spawn(BookingActor.create(), "BookingActor");
 
             BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), bookingActor);

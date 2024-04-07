@@ -7,63 +7,101 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
-import com.iisc.pods.movieticketbooking.booking_service.model.*;
+import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
+import com.iisc.pods.movieticketbooking.booking_service.model.Show;
+import com.iisc.pods.movieticketbooking.booking_service.model.Theatre;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
-public class BookingActor extends AbstractBehavior<BookingActor.Command> {
+public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     private final static Logger log = Logger.getLogger(BookingRoutes.class.getName());
 
-    public sealed interface Command {
+    private final Map<Integer, Theatre> theatres;
+    private final Map<Integer, ActorRef<ShowActor.Request>> showActors;
+
+    public sealed interface Request {
     }
 
-    public final static record GetShowsByTheatreId(Integer theatreId, ActorRef<Show.List> replyTo) implements Command {
+    public record GetShowsByTheatreId(Integer theatreId, ActorRef<List<Show>> replyTo) implements Request {
     }
 
-    public final static record GetShowById(Integer showId, ActorRef<Show.Entity> replyTo) implements Command {
+    public record GetShowById(Integer showId, ActorRef<Show> replyTo) implements Request {
     }
 
-    public final static record GetBookingsByUser(Integer userId, ActorRef<Booking.List> replyTo) implements Command {
+    public record GetBookingsByUser(Integer userId, ActorRef<Booking.List> replyTo) implements Request {
     }
 
-    public final static record CreateBooking(Booking.Entity booking, ActorRef<ActionPerformed> replyTo) implements Command {
+    public record CreateBooking(Booking.Entity booking, ActorRef<ActionPerformed> replyTo) implements Request {
     }
 
-    public final static record DeleteBookingByUser(Integer userId, ActorRef<ActionPerformed> replyTo) implements Command {
+    public record DeleteBookingByUser(Integer userId, ActorRef<ActionPerformed> replyTo) implements Request {
     }
 
-    public final static record DeleteBookingByShowAndUserId(Integer userId, Integer showId, ActorRef<ActionPerformed> replyTo) implements Command {
+    public record DeleteBookingByShowAndUserId(Integer userId, Integer showId,
+                                               ActorRef<ActionPerformed> replyTo) implements Request {
     }
 
-    public final static record DeleteAllBookings(ActorRef<ActionPerformed> replyTo) implements Command {
+    public record DeleteAllBookings(ActorRef<ActionPerformed> replyTo) implements Request {
     }
 
-    public final static record GetTheatres(ActorRef<Theatre.List> replyTo) implements Command {
+    public record GetTheatres(ActorRef<List<Theatre>> replyTo) implements Request {
     }
 
-    public final static record ActionPerformed(String description) implements Command {
+    public record ActionPerformed(String description) implements Request {
     }
 
-    private final Theatre.List theatres;
-
-    private BookingActor(ActorContext<Command> context) {
+    private BookingActor(ActorContext<Request> context) {
         super(context);
-        theatres = new Theatre.List(loadTheatreFromJson());
+        // Load theatres from CSV file
+        theatres = loadTheatreFromJson();
+        // Load shows from CSV file and create ShowActor for each show
+        showActors = loadShowsFromJson();
+    }
+
+    private Map<Integer, ActorRef<ShowActor.Request>> loadShowsFromJson() {
+        log.info("Loading shows from CSV file");
+        Map<Integer, ActorRef<ShowActor.Request>> showActors = new HashMap<>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("data/shows.csv"));
+            br.readLine(); // skip header
+            String line = br.readLine();
+            while (line != null) {
+                String[] values = line.split(",");
+                Integer showId = Integer.parseInt(values[0]);
+                Integer theatreId = Integer.parseInt(values[1]);
+                String movieName = values[2];
+                Integer price = Integer.parseInt(values[3]);
+                Integer seatsAvailable = Integer.parseInt(values[4]);
+
+                // Create ShowActor for each show
+                showActors.put(showId,
+                        getContext().spawn(
+                                ShowActor.create(
+                                        new Show(showId, theatres.get(theatreId), movieName, price, seatsAvailable)
+                                ),
+                                "ShowActor-" + showId));
+                line = br.readLine();
+            }
+        } catch (IOException e) {
+            log.info("Error loading shows from CSV file Message: " + e.getMessage());
+        }
+        return showActors;
     }
 
     /**
      * Load theatres from CSV file
      *
-     * @return List of theatres
+     * @return Map of theatreId -> theatres
      */
-    private List<Theatre.Entity> loadTheatreFromJson() {
+    private Map<Integer, Theatre> loadTheatreFromJson() {
         log.info("Loading theatres from CSV file");
-        List<Theatre.Entity> theatres = new ArrayList<>();
+        Map<Integer, Theatre> theatres = new HashMap<>();
         try {
             BufferedReader br = new BufferedReader(new FileReader("data/theatres.csv"));
             br.readLine();
@@ -73,14 +111,14 @@ public class BookingActor extends AbstractBehavior<BookingActor.Command> {
                 Integer theatreId = Integer.parseInt(values[0]);
                 String name = values[1];
                 String location = values[2];
-                Theatre.Entity theatre = new Theatre.Entity(theatreId, name, location);
-                theatres.add(theatre);
+                Theatre theatre = new Theatre(theatreId, name, location);
+                theatres.put(theatreId, theatre);
                 line = br.readLine();
             }
         } catch (IOException e) {
             log.info("Error loading theatres from CSV file. Message: " + e.getMessage());
         }
-        return null;
+        return theatres;
     }
 
     /**
@@ -88,12 +126,12 @@ public class BookingActor extends AbstractBehavior<BookingActor.Command> {
      *
      * @return Behavior of the actor
      */
-    public static Behavior<Command> create() {
+    public static Behavior<Request> create() {
         return Behaviors.setup(BookingActor::new);
     }
 
     @Override
-    public Receive<Command> createReceive() {
+    public Receive<Request> createReceive() {
         return newReceiveBuilder()
                 .onMessage(GetTheatres.class, this::onGetTheatres)
                 .onMessage(GetShowsByTheatreId.class, this::onGetShowsByTheatreId)
@@ -107,36 +145,50 @@ public class BookingActor extends AbstractBehavior<BookingActor.Command> {
     }
 
     // TODO: Implement below methods.
-    private Behavior<Command> onDeleteAllBookings(DeleteAllBookings deleteAllBookings) {
+    private Behavior<Request> onDeleteAllBookings(DeleteAllBookings deleteAllBookings) {
         return null;
     }
 
-    private Behavior<Command> onDeleteBookingByShowAndUserId(DeleteBookingByShowAndUserId deleteBookingByShowAndUserId) {
+    private Behavior<Request> onDeleteBookingByShowAndUserId(DeleteBookingByShowAndUserId deleteBookingByShowAndUserId) {
         return null;
     }
 
-    private Behavior<Command> onDeleteBookingByUser(DeleteBookingByUser deleteBookingByUser) {
+    private Behavior<Request> onDeleteBookingByUser(DeleteBookingByUser deleteBookingByUser) {
         return null;
     }
 
-    private Behavior<Command> onCreateBooking(CreateBooking createBooking) {
+    private Behavior<Request> onCreateBooking(CreateBooking createBooking) {
         return null;
     }
 
-    private Behavior<Command> onGetBookingsByUser(GetBookingsByUser getBookingsByUser) {
+    private Behavior<Request> onGetBookingsByUser(GetBookingsByUser getBookingsByUser) {
         return null;
     }
 
-    private Behavior<Command> onGetShowById(GetShowById getShowById) {
+    private Behavior<Request> onGetShowById(GetShowById request) {
+        log.info("Passing request to get show by id");
+        if (!showActors.containsKey(request.showId())) {
+            request.replyTo.tell(null);
+        } else {
+            showActors.get(request.showId()).tell(new ShowActor.GetShow(request.replyTo));
+        }
+        return this;
+    }
+
+    private Behavior<Request> onGetShowsByTheatreId(GetShowsByTheatreId getShowsByTheatreId) {
         return null;
     }
 
-    private Behavior<Command> onGetShowsByTheatreId(GetShowsByTheatreId getShowsByTheatreId) {
-        return null;
-    }
-
-    private Behavior<Command> onGetTheatres(GetTheatres getTheatres) {
-        return null;
+    /**
+     * Returns all the theatres to the sender
+     *
+     * @param request GetTheatres object containing the replyTo actor reference
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onGetTheatres(GetTheatres request) {
+        log.info("Returning " + theatres.size() + " theatres to the sender");
+        request.replyTo.tell(theatres.values().stream().toList());
+        return this;
     }
 
 }

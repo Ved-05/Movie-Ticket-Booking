@@ -13,6 +13,8 @@ import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
 import com.iisc.pods.movieticketbooking.booking_service.model.Show;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
@@ -24,7 +26,7 @@ import static akka.http.javadsl.server.Directives.*;
 public class BookingRoutes {
     private final static Logger log = Logger.getLogger(BookingRoutes.class.getName());
 
-    private final ActorRef<BookingActor.Command> bookingActor;
+    private final ActorRef<BookingActor.Request> bookingActor;
 
     private final Duration askTimeout;
 
@@ -36,10 +38,10 @@ public class BookingRoutes {
      * @param system       ActorSystem
      * @param bookingActor ActorRef for BookingActor
      */
-    public BookingRoutes(ActorSystem<?> system, ActorRef<BookingActor.Command> bookingActor) {
+    public BookingRoutes(ActorSystem<?> system, ActorRef<BookingActor.Request> bookingActor) {
         this.bookingActor = bookingActor;
         this.scheduler = system.scheduler();
-        this.askTimeout = system.settings().config().getDuration("my-app.routes.ask-timeout");
+        this.askTimeout = Duration.of(60, ChronoUnit.SECONDS);
     }
 
     /**
@@ -51,8 +53,10 @@ public class BookingRoutes {
         return concat(
                 path("theatres", () ->
                         get(() ->
-                                onSuccess(
-                                        AskPattern.ask(bookingActor, BookingActor.GetTheatres::new, askTimeout, scheduler),
+                                onSuccess(() -> {
+                                            log.info("Fetching theatres");
+                                            return AskPattern.ask(bookingActor, BookingActor.GetTheatres::new, askTimeout, scheduler);
+                                        },
                                         theatres -> complete(StatusCodes.OK, theatres, Jackson.marshaller())
                                 )
                         )
@@ -63,7 +67,7 @@ public class BookingRoutes {
                                         path(PathMatchers.segment(), theatreId ->
                                                 get(() ->
                                                         onSuccess(getShowsForTheatre(theatreId), shows -> {
-                                                            if (shows.shows().isEmpty()) {
+                                                            if (shows.isEmpty()) {
                                                                 log.info("No shows found for theatre: " + theatreId);
                                                                 return complete(StatusCodes.NOT_FOUND,
                                                                         "No shows found for theatre",
@@ -199,13 +203,13 @@ public class BookingRoutes {
                 askTimeout, scheduler);
     }
 
-    private CompletionStage<Show.Entity> getShowById(String showId) {
+    private CompletionStage<Show> getShowById(String showId) {
         log.info("Fetching show: " + showId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetShowById(Integer.parseInt(showId), ref),
                 askTimeout, scheduler);
     }
 
-    private CompletionStage<Show.List> getShowsForTheatre(String theatreId) {
+    private CompletionStage<List<Show>> getShowsForTheatre(String theatreId) {
         log.info("Fetching shows for theatre: " + theatreId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetShowsByTheatreId(Integer.parseInt(theatreId), ref),
                 askTimeout, scheduler);
