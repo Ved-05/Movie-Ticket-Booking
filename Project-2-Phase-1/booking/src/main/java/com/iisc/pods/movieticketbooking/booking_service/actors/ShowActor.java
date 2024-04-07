@@ -50,7 +50,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     }
 
     private Behavior<Request> onGetShow(GetShow getShow) {
-        log.info("Received request to get show");
+        log.info("Received request to get show details for id : " + this.show.id());
         getShow.replyTo.tell(this.show);
         return this;
     }

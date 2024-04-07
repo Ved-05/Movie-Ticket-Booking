@@ -2,19 +2,16 @@ package com.iisc.pods.movieticketbooking.booking_service.actors;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.javadsl.AbstractBehavior;
-import akka.actor.typed.javadsl.ActorContext;
-import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.Receive;
+import akka.actor.typed.javadsl.*;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
 import com.iisc.pods.movieticketbooking.booking_service.model.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 public class BookingActor extends AbstractBehavior<BookingActor.Request> {
@@ -22,6 +19,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
 
     private final Map<Integer, Theatre> theatres;
     private final Map<Integer, ActorRef<ShowActor.Request>> showActors;
+    private final Map<Integer, Set<Integer>> theatreIdToShowId;
 
     public sealed interface Request {
     }
@@ -56,6 +54,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
 
     private BookingActor(ActorContext<Request> context) {
         super(context);
+        this.theatreIdToShowId = new HashMap<>();
         // Load theatres from CSV file
         theatres = loadTheatreFromJson();
         // Load shows from CSV file and create ShowActor for each show
@@ -84,6 +83,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
                                         new Show(showId, theatres.get(theatreId), movieName, price, seatsAvailable)
                                 ),
                                 "ShowActor-" + showId));
+                this.theatreIdToShowId.get(theatreId).add(showId);
                 line = br.readLine();
             }
         } catch (IOException e) {
@@ -111,6 +111,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
                 String location = values[2];
                 Theatre theatre = new Theatre(theatreId, name, location);
                 theatres.put(theatreId, theatre);
+                this.theatreIdToShowId.put(theatreId, new HashSet<>());
                 line = br.readLine();
             }
         } catch (IOException e) {
@@ -163,9 +164,15 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         return null;
     }
 
+    /**
+     * Returns the show not found to sender if show is not found else forwards the request to the show actor
+     *
+     * @param request GetShowById object containing the show id and replyTo actor reference
+     * @return Behavior of the actor
+     */
     private Behavior<Request> onGetShowById(GetShowById request) {
         if (!showActors.containsKey(request.showId())) {
-            log.info("Passing request to get show by id");
+            log.info("Forwarding request to get show by id");
             request.replyTo.tell(new NotFoundMessage("Show not found"));
         } else {
             showActors.get(request.showId()).tell(new ShowActor.GetShow(request.replyTo));
@@ -173,8 +180,29 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         return this;
     }
 
-    private Behavior<Request> onGetShowsByTheatreId(GetShowsByTheatreId getShowsByTheatreId) {
-        return null;
+    /**
+     * Returns the shows by theatre id to the sender
+     *
+     * @param request GetShowsByTheatreId object containing the theatre id and replyTo actor reference
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onGetShowsByTheatreId(GetShowsByTheatreId request) {
+        if (!this.theatreIdToShowId.containsKey(request.theatreId)) {
+            request.replyTo.tell(Collections.emptyList());
+            return this;
+        }
+        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
+        log.info("Forwarding shows by theatre id to the show actors");
+        List<Show> shows = new ArrayList<>();
+        this.theatreIdToShowId.get(request.theatreId)
+                .forEach(showId -> {
+                    log.info("Getting show by id: " + showId);
+                    CompletionStage<ActorModel> completionStage = AskPattern.ask(showActors.get(showId),
+                            ShowActor.GetShow::new, Duration.ofSeconds(5), getContext().getSystem().scheduler());
+                    completionStage.thenAccept(actorModel -> shows.add((Show) actorModel));
+                });
+        request.replyTo.tell(shows);
+        return this;
     }
 
     /**
