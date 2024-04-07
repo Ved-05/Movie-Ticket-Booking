@@ -121,12 +121,13 @@ public class BookingRoutes {
                                                                         bookingRequest ->
                                                                                 onSuccess(createBooking(bookingRequest),
                                                                                         actionPerformed -> {
-                                                                                            if (actionPerformed.description().equals("Success")) {
+                                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
                                                                                                 log.info("Booking successful");
                                                                                                 return complete(StatusCodes.OK, "Booking successful", Jackson.marshaller());
                                                                                             } else {
-                                                                                                log.info("Booking failed");
-                                                                                                return complete(StatusCodes.BAD_REQUEST, "Booking failed", Jackson.marshaller());
+                                                                                                BookingActor.ActionFailed actionFailed = (BookingActor.ActionFailed) actionPerformed;
+                                                                                                log.info("Booking failed. Reason: " + actionFailed.description());
+                                                                                                return complete(StatusCodes.BAD_REQUEST, actionFailed.description(), Jackson.marshaller());
                                                                                             }
                                                                                         }
                                                                                 )
@@ -195,24 +196,47 @@ public class BookingRoutes {
                 ref -> new BookingActor.DeleteBookingByUser(Integer.parseInt(userId), ref), askTimeout, scheduler);
     }
 
-    private CompletionStage<BookingActor.ActionPerformed> createBooking(Booking bookingRequest) {
+    /**
+     * Create a booking for a user and show ID
+     *
+     * @param bookingRequest Booking request
+     * @return CompletionStage of ActionPerformed
+     */
+    private CompletionStage<BookingActor.Request> createBooking(Booking bookingRequest) {
         log.info("Creating booking: " + bookingRequest.toString());
         return AskPattern.ask(bookingActor, ref -> new BookingActor.CreateBooking(bookingRequest, ref),
                 askTimeout, scheduler);
     }
 
+    /**
+     * Get bookings for a user
+     * @param userId User ID
+     * @return CompletionStage of List of Bookings
+     */
     private CompletionStage<List<Booking>> getBookingsForUser(String userId) {
         log.info("Fetching bookings for user: " + userId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetBookingsByUser(Integer.parseInt(userId), ref),
                 askTimeout, scheduler);
     }
 
+    /**
+     * Get show by ID
+     *
+     * @param showId Show ID
+     * @return CompletionStage of ActorModel
+     */
     private CompletionStage<ActorModel> getShowById(String showId) {
         log.info("Fetching show: " + showId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetShowById(Integer.parseInt(showId), ref),
                 askTimeout, scheduler);
     }
 
+    /**
+     * Get shows for a theatre
+     *
+     * @param theatreId Theatre ID
+     * @return CompletionStage of List of Shows
+     */
     private CompletionStage<List<Show>> getShowsForTheatre(String theatreId) {
         log.info("Fetching shows for theatre: " + theatreId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetShowsByTheatreId(Integer.parseInt(theatreId), ref),

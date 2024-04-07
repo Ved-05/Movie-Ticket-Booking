@@ -25,6 +25,9 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public sealed interface Request {
     }
 
+    public sealed interface Response extends Request {
+    }
+
     public record GetShowsByTheatreId(Integer theatreId, ActorRef<List<Show>> replyTo) implements Request {
     }
 
@@ -34,7 +37,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record GetBookingsByUser(Integer userId, ActorRef<List<Booking>> replyTo) implements Request {
     }
 
-    public record CreateBooking(Booking booking, ActorRef<ActionPerformed> replyTo) implements Request {
+    public record CreateBooking(Booking booking, ActorRef<Request> replyTo) implements Request {
     }
 
     public record DeleteBookingByUser(Integer userId, ActorRef<ActionPerformed> replyTo) implements Request {
@@ -50,7 +53,10 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record GetTheatres(ActorRef<List<Theatre>> replyTo) implements Request {
     }
 
-    public record ActionPerformed(String description) implements Request {
+    public record ActionPerformed(String description) implements Response {
+    }
+
+    public record ActionFailed(String description) implements Response {
     }
 
     private BookingActor(ActorContext<Request> context) {
@@ -157,12 +163,48 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         return null;
     }
 
-    private Behavior<Request> onCreateBooking(CreateBooking createBooking) {
-        return null;
+    /**
+     * Handles the create booking request. If the show does not exist, it will return the show not found to the sender.
+     *
+     * @param request CreateBooking object containing the booking details and replyTo actor reference
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onCreateBooking(CreateBooking request) {
+        if (!this.showActors.containsKey(request.booking.show_id())) {
+            request.replyTo.tell(new ActionFailed("Failed. Show not exists."));
+            return this;
+        }
+        log.info("Forwarding request to create booking to the show actor");
+        this.showActors.get(request.booking.show_id()).tell(new ShowActor.CreateBooking(request.booking, request.replyTo));
+        return this;
     }
 
-    private Behavior<Request> onGetBookingsByUser(GetBookingsByUser getBookingsByUser) {
-        return null;
+    /**
+     * Returns bookings by user to the sender if bookings are found else returns an empty list
+     *
+     * @param request GetBookingsByUser object containing the user id and replyTo actor reference
+     * @return Behavior of the actor
+     */
+    private Behavior<Request> onGetBookingsByUser(GetBookingsByUser request) {
+        // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
+        log.info("Forwarding user id to the show actors");
+        // Get booking details from the show actors and then combine the results to a list
+        List<Booking> bookingsForUser = this.showActors.values().stream()
+                .map(showActor -> {
+                    CompletionStage<List<Booking>> completionStage = AskPattern.ask(showActor,
+                            ref -> new ShowActor.GetBookingForUser(request.userId, ref),
+                            Duration.ofSeconds(5), getContext().getSystem().scheduler());
+                    return completionStage.toCompletableFuture();
+                }).map(CompletableFuture::join)
+                .reduce(new ArrayList<>(), (acc, bookings) -> {
+                    acc.addAll(bookings);
+                    return acc;
+                }, (acc1, acc2) -> {
+                    acc1.addAll(acc2);
+                    return acc1;
+                });
+        request.replyTo.tell(bookingsForUser);
+        return this;
     }
 
     /**
@@ -195,7 +237,6 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         // TODO: Vaisakh - Check the logic to get shows by theatre id or implement new
         log.info("Forwarding shows by theatre id to the show actors");
         // Get show details for all shows from the show actors and then combine the results to a list
-
         List<Show> shows = this.theatreIdToShowId.get(request.theatreId).stream()
                 .map(showId -> {
                     log.info("Getting show by id: " + showId);
