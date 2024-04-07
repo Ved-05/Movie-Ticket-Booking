@@ -164,7 +164,13 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
         return this;
     }
 
-    private Behavior<Request> onDeleteBookingByShowAndUserId(DeleteBookingByShowAndUserId deleteBookingByShowAndUserId) {
+    private Behavior<Request> onDeleteBookingByShowAndUserId(DeleteBookingByShowAndUserId request) {
+        if (!this.showActors.containsKey(request.showId)) {
+            request.replyTo.tell(new ActionFailed("Failed. Show not exists."));
+            return this;
+        }
+        log.info("Forwarding delete by user id request to the show actor : " + request.showId);
+        this.showActors.get(request.showId).tell(new ShowActor.DeleteBookingForUser(request.userId, request.replyTo));
         return this;
     }
 
