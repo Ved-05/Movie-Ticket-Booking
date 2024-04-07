@@ -17,7 +17,8 @@ import com.iisc.pods.movieticketbooking.booking_service.model.Show;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 public class ShowActor extends AbstractBehavior<ShowActor.Request> {
@@ -101,7 +102,6 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
      * @return true if amount is updated successfully, false otherwise
      */
     private boolean updateWallet(Integer userId, Integer requiredAmount, boolean isRefund) {
-        AtomicBoolean success = new AtomicBoolean(false);
         ActorSystem<Void> actorSystem = getContext().getSystem();
         String url = EndPoints.WALLET + "/wallets/" + userId;
         String action = isRefund ? "credit" : "debit";
@@ -114,19 +114,25 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
                 .withMethod(HttpMethods.PUT)
                 .withEntity(entity);
 
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
         Http.get(actorSystem)
                 .singleRequest(httpRequest)
                 .thenAccept(response -> {
-                    log.info("ActionResponse from wallet service : " + response.status());
                     if (response.status().isSuccess()) {
                         log.info("Amount " + action + "ed successfully");
-                        success.set(true);
+                        future.complete(true);
                     } else {
-                        log.info("Amount could not be deducted from wallet");
+                        log.info("Amount could not be deducted from wallet" + response.status());
+                        future.complete(false);
                     }
                 });
 
-        return success.get();
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("Error while waiting for the response : " + e);
+            return false;
+        }
     }
 
     public record GetBookingForUser(Integer userId, ActorRef<List<Booking>> respondTo) implements Request {
