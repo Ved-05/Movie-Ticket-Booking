@@ -7,6 +7,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
+import com.iisc.pods.movieticketbooking.booking_service.model.ActorModel;
 import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
 import com.iisc.pods.movieticketbooking.booking_service.model.Show;
 
@@ -20,7 +21,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     public sealed interface Request {
     }
 
-    public record GetShow(ActorRef<Show> replyTo) implements Request {
+    public record GetShow(ActorRef<ActorModel> replyTo) implements Request {
     }
 
     private final Show show;

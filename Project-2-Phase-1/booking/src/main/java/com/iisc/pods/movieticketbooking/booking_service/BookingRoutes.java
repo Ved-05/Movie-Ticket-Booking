@@ -9,7 +9,9 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import com.iisc.pods.movieticketbooking.booking_service.actors.BookingActor;
+import com.iisc.pods.movieticketbooking.booking_service.model.ActorModel;
 import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
+import com.iisc.pods.movieticketbooking.booking_service.model.NotFoundMessage;
 import com.iisc.pods.movieticketbooking.booking_service.model.Show;
 
 import java.time.Duration;
@@ -84,9 +86,11 @@ public class BookingRoutes {
                                         get(() ->
                                                 onSuccess(getShowById(showId),
                                                         show -> {
-                                                            if (show == null) {
+                                                            if (show instanceof NotFoundMessage) {
                                                                 log.info("Show not found: " + showId);
-                                                                return complete(StatusCodes.NOT_FOUND, "Show not found", Jackson.marshaller());
+                                                                return complete(StatusCodes.NOT_FOUND,
+                                                                        "Show " + showId + " not found. Status code 404.",
+                                                                        Jackson.marshaller());
                                                             } else {
                                                                 log.info("Show found: " + showId);
                                                                 return complete(StatusCodes.OK, show, Jackson.marshaller());
@@ -203,7 +207,7 @@ public class BookingRoutes {
                 askTimeout, scheduler);
     }
 
-    private CompletionStage<Show> getShowById(String showId) {
+    private CompletionStage<ActorModel> getShowById(String showId) {
         log.info("Fetching show: " + showId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetShowById(Integer.parseInt(showId), ref),
                 askTimeout, scheduler);

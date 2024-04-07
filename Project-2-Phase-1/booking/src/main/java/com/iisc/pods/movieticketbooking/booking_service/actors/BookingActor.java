@@ -7,9 +7,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
-import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
-import com.iisc.pods.movieticketbooking.booking_service.model.Show;
-import com.iisc.pods.movieticketbooking.booking_service.model.Theatre;
+import com.iisc.pods.movieticketbooking.booking_service.model.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +29,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record GetShowsByTheatreId(Integer theatreId, ActorRef<List<Show>> replyTo) implements Request {
     }
 
-    public record GetShowById(Integer showId, ActorRef<Show> replyTo) implements Request {
+    public record GetShowById(Integer showId, ActorRef<ActorModel> replyTo) implements Request {
     }
 
     public record GetBookingsByUser(Integer userId, ActorRef<List<Booking>> replyTo) implements Request {
@@ -166,9 +164,9 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     }
 
     private Behavior<Request> onGetShowById(GetShowById request) {
-        log.info("Passing request to get show by id");
         if (!showActors.containsKey(request.showId())) {
-            request.replyTo.tell(null);
+            log.info("Passing request to get show by id");
+            request.replyTo.tell(new NotFoundMessage("Show not found"));
         } else {
             showActors.get(request.showId()).tell(new ShowActor.GetShow(request.replyTo));
         }

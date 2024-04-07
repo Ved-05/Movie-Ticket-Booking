@@ -9,5 +9,5 @@ public record Show(
         String title,
         Integer price,
         Integer seats_available
-) {
+) implements ActorModel {
 }
