@@ -10,6 +10,7 @@ import akka.actor.typed.javadsl.Receive;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.*;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
+import com.iisc.pods.movieticketbooking.booking_service.EndPoints;
 import com.iisc.pods.movieticketbooking.booking_service.model.ActorModel;
 import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
 import com.iisc.pods.movieticketbooking.booking_service.model.Show;
@@ -28,7 +29,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     public record GetShow(ActorRef<ActorModel> replyTo) implements Request {
     }
 
-    private final Show show;
+    private Show show;
     private final List<Booking> bookings;
 
     private ShowActor(ActorContext<Request> context, Show show) {
@@ -58,7 +59,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     }
 
     private Behavior<Request> onGetShow(GetShow getShow) {
-        log.info("Received request to get show details for id : " + this.show.id());
+        log.info("Responding with show details : " + this.show);
         getShow.replyTo.tell(this.show);
         return this;
     }
@@ -81,9 +82,10 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
             actionResponse = new BookingActor.ActionFailed("Failed. Number of booked seats exceeds available seats" +
                     " for show " + this.show.id());
         } else if (!updateWallet(bookingRequest.booking.user_id(), requiredAmount, false)) {
-            actionResponse = new BookingActor.ActionFailed("Failed. Amount exceeds 1000");
+            actionResponse = new BookingActor.ActionFailed("Booking failed. Amount count not be deducted from wallet of user " +
+                    bookingRequest.booking.user_id());
         } else {
-            this.show.bookSeats(bookingRequest.booking.seats_booked());
+            this.show = this.show.bookSeats(bookingRequest.booking.seats_booked());
             bookings.add(bookingRequest.booking);
             actionResponse = new BookingActor.ActionPerformed("Success");
         }
@@ -101,7 +103,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     private boolean updateWallet(Integer userId, Integer requiredAmount, boolean isRefund) {
         AtomicBoolean success = new AtomicBoolean(false);
         ActorSystem<Void> actorSystem = getContext().getSystem();
-        String url = "http://localhost:8080/wallet/deduct/" + userId;
+        String url = EndPoints.WALLET + "/wallets/" + userId;
         String action = isRefund ? "credit" : "debit";
 
         HttpEntity.Strict entity = HttpEntities.create(
@@ -155,8 +157,8 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
      * @return Behavior of the actor
      */
     private Behavior<Request> onDeleteAllBookings(DeleteAllBookings request) {
-        log.info("Deleting all bookings for show " + this.show.id());
         try {
+            log.info("Got " + bookings.size() + " bookings to delete for " + this.show.id());
             bookings.forEach(this::revertBooking);
         } catch (RuntimeException e) {
             request.replyTo.tell(new BookingActor.ActionFailed("Failed"));
@@ -175,7 +177,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
             log.info("Amount could not be refunded to wallet for user " + booking.user_id());
             throw new RuntimeException("Amount could not be refunded to wallet for user " + booking.user_id());
         }
-        this.show.revertBookedSeats(this.show.seats_available() + booking.seats_booked());
+        this.show = this.show.revertBookedSeats(this.show.seats_available() + booking.seats_booked());
         this.bookings.remove(booking);
     }
 
@@ -189,11 +191,11 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
      * @return Behavior of the actor
      */
     private Behavior<Request> onDeleteBookingForUser(DeleteBookingForUser request) {
-        log.info("Deleting all bookings for user " + request.userId());
         List<Booking> bookingsForUser = bookings.stream()
                 .filter(booking -> booking.user_id().equals(request.userId()))
                 .toList();
         try {
+            log.info("Got " + bookingsForUser.size() + " bookings to delete for " + this.show.id() + " and user " + request.userId());
             bookingsForUser.forEach(this::revertBooking);
         } catch (RuntimeException e) {
             request.respondTo.tell(new BookingActor.ActionFailed("Failed"));

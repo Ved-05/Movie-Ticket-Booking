@@ -1,5 +1,6 @@
 package com.iisc.pods.movieticketbooking.user.rest;
 
+import com.iisc.pods.movieticketbooking.user.EndPoints;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -14,9 +15,9 @@ public class RestService {
 
     private final RestTemplate restTemplate;
 
-    private final String WALLET_SERVICE_URL = "http://suvedg-wallet-service:8082/wallets";
+    private final String WALLET_SERVICE_URL = EndPoints.WALLET + "/wallets";
 
-    private final String BOOKING_SERVICE_URL = "http://suvedg-booking-service:8081/bookings";
+    private final String BOOKING_SERVICE_URL = EndPoints.BOOKING + "/bookings";
 
     RestService() {
         restTemplate = new RestTemplate();
