@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage;
 public class App {
     static void startHttpServer(Route route, ActorSystem<?> system) {
         CompletionStage<ServerBinding> futureBinding =
-                Http.get(system).newServerAt("host.docker.internal", 8080).bind(route);
+                Http.get(system).newServerAt("0.0.0.0", 8080).bind(route);
 
         futureBinding.whenComplete((binding, exception) -> {
             if (binding != null) {
@@ -35,7 +35,7 @@ public class App {
     }
     // #start-http-server
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         //#server-bootstrapping
         Behavior<NotUsed> rootBehavior = Behaviors.setup(context -> {
             ActorRef<BookingActor.Request> bookingActor =
