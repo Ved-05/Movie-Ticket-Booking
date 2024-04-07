@@ -150,8 +150,6 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
                 .build();
     }
 
-    // TODO: Implement below methods.
-
     /**
      * Handles the delete all bookings request
      *
@@ -159,6 +157,7 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
      * @return Behavior of the actor
      */
     private Behavior<Request> onDeleteAllBookings(DeleteAllBookings request) {
+        log.info("Forwarding delete all bookings request to the show actors");
         this.showActors.values().forEach(showActor -> showActor.tell(new ShowActor.DeleteAllBookings(request.replyTo)));
         request.replyTo.tell(new ActionPerformed("All bookings deleted."));
         return this;

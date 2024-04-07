@@ -6,7 +6,6 @@ import akka.actor.typed.Scheduler;
 import akka.actor.typed.javadsl.AskPattern;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.http.javadsl.model.StatusCodes;
-import akka.http.javadsl.server.PathMatchers;
 import akka.http.javadsl.server.Route;
 import com.iisc.pods.movieticketbooking.booking_service.actors.BookingActor;
 import com.iisc.pods.movieticketbooking.booking_service.model.ActorModel;
@@ -21,6 +20,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 import static akka.http.javadsl.server.Directives.*;
+import static akka.http.javadsl.server.PathMatchers.segment;
 
 /**
  * Routes can be defined in separated classes like shown in here
@@ -66,7 +66,7 @@ public class BookingRoutes {
                 pathPrefix("shows", () ->
                         concat(
                                 pathPrefix("theatres", () ->
-                                        path(PathMatchers.segment(), theatreId ->
+                                        path(segment(), theatreId ->
                                                 get(() ->
                                                         onSuccess(getShowsForTheatre(theatreId), shows -> {
                                                             if (shows.isEmpty()) {
@@ -82,7 +82,7 @@ public class BookingRoutes {
                                                 )
                                         )
                                 ),
-                                path(PathMatchers.segment(), showId ->
+                                path(segment(), showId ->
                                         get(() ->
                                                 onSuccess(getShowById(showId),
                                                         show -> {
@@ -98,78 +98,80 @@ public class BookingRoutes {
                                                         }
                                                 )
                                         )
-                                ),
-                                pathPrefix("bookings", () ->
+                                )
+                        )
+                ),
+                pathPrefix("bookings", () ->
+                        concat(
+                                pathEnd(() ->
                                         concat(
-                                                path("users", () ->
-                                                        path(PathMatchers.segment(), userId ->
-                                                                get(() ->
-                                                                        onSuccess(getBookingsForUser(userId),
-                                                                                bookings -> {
-                                                                                    log.info("Bookings found for user: " + userId);
-                                                                                    return complete(StatusCodes.OK, bookings, Jackson.marshaller());
+                                                post(() ->
+                                                        entity(
+                                                                Jackson.unmarshaller(Booking.class),
+                                                                bookingRequest ->
+                                                                        onSuccess(createBooking(bookingRequest),
+                                                                                actionPerformed -> {
+                                                                                    if (actionPerformed instanceof BookingActor.ActionPerformed) {
+                                                                                        log.info("Booking successful");
+                                                                                        return complete(StatusCodes.OK, "Booking successful", Jackson.marshaller());
+                                                                                    } else {
+                                                                                        BookingActor.ActionFailed actionFailed = (BookingActor.ActionFailed) actionPerformed;
+                                                                                        log.info("Booking failed. Reason: " + actionFailed.description());
+                                                                                        return complete(StatusCodes.BAD_REQUEST, actionFailed.description(), Jackson.marshaller());
+                                                                                    }
                                                                                 }
                                                                         )
-                                                                )
                                                         )
                                                 ),
-
-                                                pathEnd(() ->
-                                                        post(() ->
-                                                                entity(
-                                                                        Jackson.unmarshaller(Booking.class),
-                                                                        bookingRequest ->
-                                                                                onSuccess(createBooking(bookingRequest),
-                                                                                        actionPerformed -> {
-                                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
-                                                                                                log.info("Booking successful");
-                                                                                                return complete(StatusCodes.OK, "Booking successful", Jackson.marshaller());
-                                                                                            } else {
-                                                                                                BookingActor.ActionFailed actionFailed = (BookingActor.ActionFailed) actionPerformed;
-                                                                                                log.info("Booking failed. Reason: " + actionFailed.description());
-                                                                                                return complete(StatusCodes.BAD_REQUEST, actionFailed.description(), Jackson.marshaller());
-                                                                                            }
-                                                                                        }
-                                                                                )
-                                                                )
-                                                        )
-                                                ),
-
-                                                path("users", () ->
-                                                        path(PathMatchers.segment(), userId ->
-                                                                delete(() ->
-                                                                        onSuccess(deleteAllBookingsForUser(userId), actionPerformed -> {
-                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
-                                                                                return complete(StatusCodes.OK, "Bookings deleted for " + userId + " successfully", Jackson.marshaller());
-                                                                            } else {
-                                                                                return complete(StatusCodes.NOT_FOUND, "User not found", Jackson.marshaller());
-                                                                            }
-                                                                        })
-                                                                )
-                                                        )
-                                                ),
-
-                                                path("users", () ->
-                                                        path(PathMatchers.segment().
-                                                                slash("shows").
-                                                                slash(PathMatchers.segment()), (userId, showId) ->
-                                                                delete(() ->
-                                                                        onSuccess(deleteBookingsForUserInShow(userId, showId), actionPerformed -> {
-                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
-                                                                                return complete(StatusCodes.OK, "Bookings deleted successfully", Jackson.marshaller());
-                                                                            } else {
-                                                                                return complete(StatusCodes.NOT_FOUND, "User or show not found", Jackson.marshaller());
-                                                                            }
-                                                                        })
-                                                                )
-                                                        )
-                                                ),
-
                                                 delete(() ->
                                                         onSuccess(deleteAllBookings(), actionPerformed -> {
                                                             log.info("All bookings deleted successfully");
                                                             return complete(StatusCodes.OK, "All bookings deleted successfully", Jackson.marshaller());
                                                         })
+                                                )
+                                        )
+                                ),
+
+                                pathPrefix("users", () ->
+                                        concat(
+                                                pathPrefix(segment(), userId ->
+                                                        concat(
+                                                                pathEnd(() ->
+                                                                        concat(
+                                                                                get(() ->
+                                                                                        onSuccess(getBookingsForUser(userId),
+                                                                                                bookings -> {
+                                                                                                    log.info("Bookings found for user: " + userId);
+                                                                                                    return complete(StatusCodes.OK, bookings, Jackson.marshaller());
+                                                                                                }
+                                                                                        )
+                                                                                ),
+
+                                                                                delete(() ->
+                                                                                        onSuccess(deleteAllBookingsForUser(userId), actionPerformed -> {
+                                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
+                                                                                                return complete(StatusCodes.OK, "Bookings deleted for " + userId + " successfully", Jackson.marshaller());
+                                                                                            } else {
+                                                                                                return complete(StatusCodes.NOT_FOUND, "User not found", Jackson.marshaller());
+                                                                                            }
+                                                                                        })
+                                                                                )
+                                                                        )
+                                                                ),
+                                                                pathPrefix("shows", () ->
+                                                                        pathPrefix(segment(), showId ->
+                                                                                delete(() ->
+                                                                                        onSuccess(deleteBookingsForUserInShow(userId, showId), actionPerformed -> {
+                                                                                            if (actionPerformed instanceof BookingActor.ActionPerformed) {
+                                                                                                return complete(StatusCodes.OK, "Bookings deleted successfully", Jackson.marshaller());
+                                                                                            } else {
+                                                                                                return complete(StatusCodes.NOT_FOUND, "User or show not found", Jackson.marshaller());
+                                                                                            }
+                                                                                        })
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
                                                 )
                                         )
                                 )
@@ -178,16 +180,32 @@ public class BookingRoutes {
         );
     }
 
+    /**
+     * Deletes all bookings
+     * @return CompletionStage of ActionPerformed
+     */
     private CompletionStage<BookingActor.ActionResponse> deleteAllBookings() {
+        log.info("Deleting all bookings");
         return AskPattern.ask(bookingActor, BookingActor.DeleteAllBookings::new, askTimeout, scheduler);
     }
 
+    /**
+     * Deletes booking for a given user id and show id
+     * @param userId User id
+     * @param showId Show id
+     * @return CompletionStage of ActionPerformed
+     */
     private CompletionStage<BookingActor.ActionResponse> deleteBookingsForUserInShow(String userId, String showId) {
         log.info("Deleting bookings for user: " + userId + " in show: " + showId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.DeleteBookingByShowAndUserId(
                 Integer.parseInt(userId), Integer.parseInt(showId), ref), askTimeout, scheduler);
     }
 
+    /**
+     * Deletes booking for a given user id
+     * @param userId User id
+     * @return CompletionStage of ActionPerformed
+     */
     private CompletionStage<BookingActor.ActionResponse> deleteAllBookingsForUser(String userId) {
         log.info("Deleting bookings for user: " + userId);
         return AskPattern.ask(bookingActor,
