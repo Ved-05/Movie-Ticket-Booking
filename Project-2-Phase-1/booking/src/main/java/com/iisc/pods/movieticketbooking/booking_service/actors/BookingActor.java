@@ -34,10 +34,10 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record GetShowById(Integer showId, ActorRef<Show> replyTo) implements Request {
     }
 
-    public record GetBookingsByUser(Integer userId, ActorRef<Booking.List> replyTo) implements Request {
+    public record GetBookingsByUser(Integer userId, ActorRef<List<Booking>> replyTo) implements Request {
     }
 
-    public record CreateBooking(Booking.Entity booking, ActorRef<ActionPerformed> replyTo) implements Request {
+    public record CreateBooking(Booking booking, ActorRef<ActionPerformed> replyTo) implements Request {
     }
 
     public record DeleteBookingByUser(Integer userId, ActorRef<ActionPerformed> replyTo) implements Request {

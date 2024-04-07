@@ -113,7 +113,7 @@ public class BookingRoutes {
                                                 pathEnd(() ->
                                                         post(() ->
                                                                 entity(
-                                                                        Jackson.unmarshaller(Booking.Entity.class),
+                                                                        Jackson.unmarshaller(Booking.class),
                                                                         bookingRequest ->
                                                                                 onSuccess(createBooking(bookingRequest),
                                                                                         actionPerformed -> {
@@ -191,13 +191,13 @@ public class BookingRoutes {
                 ref -> new BookingActor.DeleteBookingByUser(Integer.parseInt(userId), ref), askTimeout, scheduler);
     }
 
-    private CompletionStage<BookingActor.ActionPerformed> createBooking(Booking.Entity bookingRequest) {
+    private CompletionStage<BookingActor.ActionPerformed> createBooking(Booking bookingRequest) {
         log.info("Creating booking: " + bookingRequest.toString());
         return AskPattern.ask(bookingActor, ref -> new BookingActor.CreateBooking(bookingRequest, ref),
                 askTimeout, scheduler);
     }
 
-    private CompletionStage<Booking.List> getBookingsForUser(String userId) {
+    private CompletionStage<List<Booking>> getBookingsForUser(String userId) {
         log.info("Fetching bookings for user: " + userId);
         return AskPattern.ask(bookingActor, ref -> new BookingActor.GetBookingsByUser(Integer.parseInt(userId), ref),
                 askTimeout, scheduler);
