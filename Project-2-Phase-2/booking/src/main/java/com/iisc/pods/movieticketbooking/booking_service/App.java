@@ -97,17 +97,11 @@ public class App {
                 
                 /**
                  * Requirements: 
-                 * If the given port number is 8083, i.e., it is the primary node, it must start a HTTP 
-                 * Server, which listens to requests from outside. This http server must bind to port
-                 * 8081.  In this mode, the program must spawn the (singleton) Booking actor, which
-                 * would be the gateway actor that the route logic will contact.
-                 */
-                BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), groupRouter);
-                startHttpServer(bookingRoutes.bookingServiceRoute(), context.getSystem());
-
-                //TODO: What to do about 8083??
-                /**
-                 * Requirements:
+                 *  - If the given port number is 8083, i.e., it is the primary node, it must start a HTTP 
+                 *    Server, which listens to requests from outside. This http server must bind to port
+                 *    8081.  In this mode, the program must spawn the (singleton) Booking actor, which
+                 *    would be the gateway actor that the route logic will contact.
+                 * 
                  *  - Unlike in Phase 1, the Booking actor should not spawn the worker actors directly 
                  *    (see the definition of worker actor above in the Phase 1 description). As if it
                  *    did so, all work would happen on the primary node and the other secondary nodes in
@@ -121,8 +115,10 @@ public class App {
                  *    respond to itself, it should forward to the router, which will internally forward to one of
                  *    the worker actors. This way the total work is distributed across all the worker actors
                  *    in all the nodes.
-                 * 
+
                  */
+                BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), groupRouter);
+                startHttpServer(bookingRoutes.bookingServiceRoute(), context.getSystem());
             }
 
             if (cluster.selfMember().hasRole("clusternodes")) {
