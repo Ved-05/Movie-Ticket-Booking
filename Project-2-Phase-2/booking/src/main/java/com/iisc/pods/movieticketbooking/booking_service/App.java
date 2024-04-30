@@ -44,7 +44,7 @@ public class App {
         String dockerString = System.getenv("DOCKER_RUNNING");
         boolean dockerRunning = (dockerString != null && System.getenv("DOCKER_RUNNING").equals("TRUE"));
         CompletionStage<ServerBinding> futureBinding =
-                Http.get(system).newServerAt("0.0.0.0", (dockerRunning ? 8080:8081)).bind(route);
+                Http.get(system).newServerAt("0.0.0.0", (dockerRunning ? 8081:8081)).bind(route);
 
         futureBinding.whenComplete((binding, exception) -> {
             if (binding != null) {

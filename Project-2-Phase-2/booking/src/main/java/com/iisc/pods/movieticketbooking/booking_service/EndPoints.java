@@ -15,7 +15,7 @@ public final class EndPoints {
         String dockerString = System.getenv("DOCKER_RUNNING");
         boolean dockerRunning = (dockerString != null && System.getenv("DOCKER_RUNNING").equals("TRUE"));
         if (dockerRunning) {
-            retval = BASE_URL_DOCKER + USER_PORT;
+            retval = BASE_URL_LOCALDEV + USER_PORT;
         } else {
             retval = BASE_URL_LOCALDEV + USER_PORT;
         }
@@ -27,7 +27,7 @@ public final class EndPoints {
         String dockerString = System.getenv("DOCKER_RUNNING");
         boolean dockerRunning = (dockerString != null && System.getenv("DOCKER_RUNNING").equals("TRUE"));
         if (dockerRunning) {
-            retval = BASE_URL_DOCKER + BOOKING_PORT;
+            retval = BASE_URL_LOCALDEV + BOOKING_PORT;
         } else {
             retval = BASE_URL_LOCALDEV + BOOKING_PORT;
         }
@@ -39,7 +39,7 @@ public final class EndPoints {
         String dockerString = System.getenv("DOCKER_RUNNING");
         boolean dockerRunning = (dockerString != null && System.getenv("DOCKER_RUNNING").equals("TRUE"));
         if (dockerRunning) {
-            retval = BASE_URL_DOCKER + WALLET_PORT;
+            retval = BASE_URL_LOCALDEV + WALLET_PORT;
         } else {
             retval = BASE_URL_LOCALDEV + WALLET_PORT;
         }
