@@ -14,4 +14,5 @@ RUN mv /target/*.jar /target/app.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java", "-jar", "/target/app.jar"]
+#ENTRYPOINT ["java", "-jar", "/target/app.jar"]
+ENTRYPOINT ["mvn", "-Dspring-boot.run.arguments=\"--spring.profiles.active=docker\"", "spring-boot:run"]
