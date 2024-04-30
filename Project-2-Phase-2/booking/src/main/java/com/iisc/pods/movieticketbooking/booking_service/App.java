@@ -5,10 +5,16 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.GroupRouter;
+import akka.actor.typed.javadsl.Routers;
+import akka.actor.typed.receptionist.Receptionist;
+import akka.actor.typed.receptionist.ServiceKey;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.server.Route;
 import com.iisc.pods.movieticketbooking.booking_service.actors.BookingActor;
+import com.iisc.pods.movieticketbooking.booking_service.model.Booking;
+
 import akka.cluster.typed.Cluster;
 
 
@@ -18,6 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
 import java.util.concurrent.CompletionStage;
+
+import javax.swing.GroupLayout.Group;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -72,6 +80,8 @@ public class App {
     }
 
     private static Behavior<Void> rootBehavior() {
+        ServiceKey<BookingActor.Request> serviceKey = ServiceKey.create(BookingActor.Request.class, "booking-worker");
+
         //#server-bootstrapping
         Behavior<Void> rootBehavior = Behaviors.setup(context -> {
 
@@ -80,8 +90,11 @@ public class App {
             //# Primary node creation request
 
             if (cluster.selfMember().hasRole("mainbooking")) {
-                ActorRef<BookingActor.Request> bookingActor =
-                    context.spawn(BookingActor.create(), "BookingActor");
+                ActorRef<BookingActor.Request> bookingActor = context.spawn(BookingActor.create(), "BookingActor");
+                context.getSystem().receptionist().tell(Receptionist.register(serviceKey, bookingActor));
+                GroupRouter<BookingActor.Request> bookingRouter = Routers.group(serviceKey);
+                ActorRef<BookingActor.Request> groupRouter = context.spawn(bookingRouter, "bookingRouter");
+                
                 /**
                  * Requirements: 
                  * If the given port number is 8083, i.e., it is the primary node, it must start a HTTP 
@@ -89,7 +102,7 @@ public class App {
                  * 8081.  In this mode, the program must spawn the (singleton) Booking actor, which
                  * would be the gateway actor that the route logic will contact.
                  */
-                BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), bookingActor);
+                BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), groupRouter);
                 startHttpServer(bookingRoutes.bookingServiceRoute(), context.getSystem());
 
                 //TODO: What to do about 8083??
@@ -132,7 +145,6 @@ public class App {
         Map<String, Object> overrides = new HashMap<>();
         overrides.put("akka.remote.artery.canonical.port", port);
         overrides.put("akka.cluster.roles", Collections.singletonList(role));
-        overrides.put("akka.actor.provider", "cluster");
         
         Config config = ConfigFactory.parseMap(overrides)
             .withFallback(ConfigFactory.load("bookingservs.conf"));
