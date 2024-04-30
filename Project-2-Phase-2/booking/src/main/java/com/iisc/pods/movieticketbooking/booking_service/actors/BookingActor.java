@@ -3,6 +3,10 @@ package com.iisc.pods.movieticketbooking.booking_service.actors;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
+import akka.cluster.ClusterEvent;
+import akka.cluster.typed.Cluster;
+import akka.cluster.typed.Subscribe;
+
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
 import com.iisc.pods.movieticketbooking.booking_service.model.*;
 
@@ -59,8 +63,39 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
     public record ActionFailed(String description) implements ActionResponse {
     }
 
+      // internal adapted cluster events only
+    private static final class ReachabilityChange implements Request {
+        final ClusterEvent.ReachabilityEvent reachabilityEvent;
+        ReachabilityChange(ClusterEvent.ReachabilityEvent reachabilityEvent) {
+        this.reachabilityEvent = reachabilityEvent;
+        }
+    }
+    private static final class MemberChange implements Request {
+        final ClusterEvent.MemberEvent memberEvent;
+        MemberChange(ClusterEvent.MemberEvent memberEvent) {
+        this.memberEvent = memberEvent;
+        }
+    }
+
+    private Behavior<Request> onReachabilityChange(ReachabilityChange reachabilityChange) {
+        log.info("Reachability change detected: " + reachabilityChange.reachabilityEvent);
+        return this;
+    }
+
+    private Behavior<Request> onMemberChange(MemberChange memberChange) {
+        log.info("Member change detected: " + memberChange.memberEvent);
+        return this;
+    }
+
     private BookingActor(ActorContext<Request> context) {
         super(context);
+        Cluster cluster = Cluster.get(context.getSystem());
+        ActorRef<ClusterEvent.MemberEvent> member = context.messageAdapter(ClusterEvent.MemberEvent.class, MemberChange::new);
+        ActorRef<ClusterEvent.ReachabilityEvent> reachability = context.messageAdapter(ClusterEvent.ReachabilityEvent.class, ReachabilityChange::new);
+        cluster.subscriptions().tell(Subscribe.create(member, ClusterEvent.MemberEvent.class)); 
+        cluster.subscriptions().tell(Subscribe.create(reachability, ClusterEvent.ReachabilityEvent.class));
+
+
         this.theatreIdToShowId = new HashMap<>();
         // Load theatres from CSV file
         theatres = loadTheatreFromJson();
@@ -147,6 +182,8 @@ public class BookingActor extends AbstractBehavior<BookingActor.Request> {
                 .onMessage(DeleteBookingByUser.class, this::onDeleteBookingByUser)
                 .onMessage(DeleteBookingByShowAndUserId.class, this::onDeleteBookingByShowAndUserId)
                 .onMessage(DeleteAllBookings.class, this::onDeleteAllBookings)
+                .onMessage(ReachabilityChange.class, this::onReachabilityChange)
+                .onMessage(MemberChange.class, this::onMemberChange)
                 .build();
     }
 

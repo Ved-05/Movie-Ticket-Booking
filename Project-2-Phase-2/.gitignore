@@ -1,0 +1,6 @@
+*.class
+__pycache__
+.idea
+booking/target/*
+user/target/*
+wallet/target/*

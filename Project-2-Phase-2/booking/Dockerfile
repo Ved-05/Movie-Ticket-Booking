@@ -4,7 +4,7 @@ COPY pom.xml  /pom.xml
 COPY src      /src
 #COPY target   /target
 COPY data    /data
-
+ENV DOCKER_RUNNING="TRUE"
 RUN apt-get update
 
 RUN apt-get -y install maven
