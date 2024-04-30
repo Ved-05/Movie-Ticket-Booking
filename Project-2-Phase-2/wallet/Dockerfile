@@ -3,7 +3,7 @@ FROM eclipse-temurin:17
 COPY pom.xml  /pom.xml
 COPY src      /src
 #COPY target   /target
-
+ENV DOCKER_RUNNING="TRUE"
 RUN apt-get update
 
 RUN apt-get -y install maven
