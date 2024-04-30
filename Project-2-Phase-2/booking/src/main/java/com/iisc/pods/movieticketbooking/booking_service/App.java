@@ -14,14 +14,18 @@ import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.server.Route;
 import com.iisc.pods.movieticketbooking.booking_service.actors.BookingActor;
 import com.iisc.pods.movieticketbooking.booking_service.actors.BookingWorker;
+import com.iisc.pods.movieticketbooking.booking_service.actors.ShowActor;
+import com.iisc.pods.movieticketbooking.booking_service.model.Show;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Logger;
 
 import static com.iisc.pods.movieticketbooking.booking_service.actors.BookingWorker.BOOKING_WORKER_SERVICE_KEY;
 
@@ -29,21 +33,31 @@ import static com.iisc.pods.movieticketbooking.booking_service.actors.BookingWor
  * Main class for the application.
  */
 public class App {
+    private final static Logger log = Logger.getLogger(App.class.getName());
 
     private static class RootBehavior {
-        static Behavior<Void> create() {
+        static Behavior<Void> create(Map<Integer, Show> integerShowMap) {
             return Behaviors.setup(context -> {
                 Cluster cluster = Cluster.get(context.getSystem());
+                Set<Integer> showIds = integerShowMap.keySet();
                 for (int i=0; i < 50; i++) {
-                    ActorRef<BookingWorker.Request> worker = context.spawn(BookingWorker.create(), "BookingWorker" + i);
+                    ActorRef<BookingWorker.Request> worker = context.spawn(BookingWorker.create(showIds), "BookingWorker" + i);
                     context.getSystem().receptionist().tell(Receptionist.register(BOOKING_WORKER_SERVICE_KEY, worker));
                 }
                 GroupRouter<BookingWorker.Request> group = Routers.group(BOOKING_WORKER_SERVICE_KEY);
                 ActorRef<BookingWorker.Request> router = context.spawn(group, "worker-group");
 
                 if (cluster.selfMember().hasRole("primary")) {
+                    integerShowMap.values().forEach(show -> ShowActor.initSharding(context.getSystem(), show));
+                    // Create a map of theatre id -> show id from integerShowMap
+                    Map<Integer, Set<Integer>> theatreShowMap = new HashMap<>();
+                    integerShowMap.forEach((showId, show) -> {
+                        Set<Integer> showIdsForTheatre = theatreShowMap.getOrDefault(show.theatre_id(), new HashSet<>());
+                        showIdsForTheatre.add(showId);
+                        theatreShowMap.put(show.theatre_id(), showIdsForTheatre);
+                    });
                     ActorRef<BookingActor.Request> bookingActor =
-                            context.spawn(BookingActor.create(router), "BookingActor");
+                            context.spawn(BookingActor.create(router, theatreShowMap), "BookingActor");
                     BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), bookingActor);
                     startHttpServer(bookingRoutes.bookingServiceRoute(), context.getSystem());
                 }
@@ -106,6 +120,33 @@ public class App {
         Config config = ConfigFactory.parseMap(overrides).withFallback(ConfigFactory.load());
 
         // Create an Akka system
-        ActorSystem<Void> system = ActorSystem.create(RootBehavior.create(), "MovieTicketBookingClusterSystem", config);
+
+        ActorSystem<Void> system = ActorSystem.create(RootBehavior.create(readShowsFromCSV()), "MovieTicketBookingClusterSystem", config);
+    }
+
+    /**
+     * Initialize the show actors.
+     */
+    private static Map<Integer, Show> readShowsFromCSV() {
+        log.info("Initializing show actors");
+        Map<Integer, Show> shows = new HashMap<>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("data/shows.csv"));
+            br.readLine(); // skip header
+            String line = br.readLine();
+            while (line != null) {
+                String[] values = line.split(",");
+                Integer showId = Integer.parseInt(values[0]);
+                Integer theatreId = Integer.parseInt(values[1]);
+                String movieName = values[2];
+                Integer price = Integer.parseInt(values[3]);
+                Integer seatsAvailable = Integer.parseInt(values[4]);
+                shows.put(showId, new Show(showId, theatreId, movieName, price, seatsAvailable));
+                line = br.readLine();
+            }
+        } catch (IOException e) {
+            log.info("Error loading shows from CSV file Message: " + e.getMessage());
+        }
+        return shows;
     }
 }

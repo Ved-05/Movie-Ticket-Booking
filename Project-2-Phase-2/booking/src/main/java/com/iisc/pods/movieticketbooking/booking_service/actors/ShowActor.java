@@ -7,6 +7,9 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import akka.cluster.sharding.typed.javadsl.ClusterSharding;
+import akka.cluster.sharding.typed.javadsl.Entity;
+import akka.cluster.sharding.typed.javadsl.EntityTypeKey;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.*;
 import com.iisc.pods.movieticketbooking.booking_service.BookingRoutes;
@@ -21,8 +24,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+/**
+ * Actor class for managing show details.
+ */
 public class ShowActor extends AbstractBehavior<ShowActor.Request> {
     private final static Logger log = Logger.getLogger(BookingRoutes.class.getName());
+    private final String entityId;
+
+    public static final EntityTypeKey<Request> TypeKey =
+            EntityTypeKey.create(ShowActor.Request.class, "ShowActor");
+
+    public static void initSharding(ActorSystem<?> system, Show show) {
+        ClusterSharding.get(system).init(Entity.of(TypeKey, entityContext ->
+                ShowActor.create(show)));
+    }
 
     public sealed interface Request {
     }
@@ -35,6 +50,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
 
     private ShowActor(ActorContext<Request> context, Show show) {
         super(context);
+        this.entityId = show.id().toString();
         this.show = show;
         this.bookings = new ArrayList<>();
     }
@@ -187,7 +203,8 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
         this.bookings.remove(booking);
     }
 
-    public record DeleteBookingForUser(Integer userId, ActorRef<BookingActor.ActionResponse> respondTo) implements Request {
+    public record DeleteBookingForUser(Integer userId,
+                                       ActorRef<BookingActor.ActionResponse> respondTo) implements Request {
     }
 
     /**
