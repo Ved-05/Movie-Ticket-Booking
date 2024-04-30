@@ -103,7 +103,7 @@ public class ShowActor extends AbstractBehavior<ShowActor.Request> {
      */
     private boolean updateWallet(Integer userId, Integer requiredAmount, boolean isRefund) {
         ActorSystem<Void> actorSystem = getContext().getSystem();
-        String url = EndPoints.WALLET + "/wallets/" + userId;
+        String url = EndPoints.getWalletPort() + "/wallets/" + userId;
         String action = isRefund ? "credit" : "debit";
 
         HttpEntity.Strict entity = HttpEntities.create(

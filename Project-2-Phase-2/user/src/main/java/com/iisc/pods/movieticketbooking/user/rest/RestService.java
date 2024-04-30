@@ -15,9 +15,13 @@ public class RestService {
 
     private final RestTemplate restTemplate;
 
-    private final String WALLET_SERVICE_URL = EndPoints.WALLET + "/wallets";
+    private final String WALLET_SERVICE_URL(){
+        return EndPoints.getWalletPort() + "/wallets";
+    }
 
-    private final String BOOKING_SERVICE_URL = EndPoints.BOOKING + "/bookings";
+    private final String BOOKING_SERVICE_URL() {
+        return EndPoints.getBookingPort() + "/bookings";
+    }
 
     RestService() {
         restTemplate = new RestTemplate();
@@ -30,7 +34,7 @@ public class RestService {
      * @return true if bookings are deleted, else false
      */
     public boolean deleteBookings(Integer userId) {
-        String url = BOOKING_SERVICE_URL + "/users/{user_id}";
+        String url = BOOKING_SERVICE_URL() + "/users/{user_id}";
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, null, String.class,
                 userId);
         return response.getStatusCode().is2xxSuccessful();
@@ -42,8 +46,8 @@ public class RestService {
      * @return true if wallet is deleted, else false
      */
     public boolean deleteBookings() {
-        log.info("Deleting all bookings at " + BOOKING_SERVICE_URL);
-        ResponseEntity<String> response = restTemplate.exchange(BOOKING_SERVICE_URL, HttpMethod.DELETE,
+        log.info("Deleting all bookings at " + BOOKING_SERVICE_URL());
+        ResponseEntity<String> response = restTemplate.exchange(BOOKING_SERVICE_URL(), HttpMethod.DELETE,
                 null, String.class);
         return response.getStatusCode().is2xxSuccessful();
     }
@@ -55,7 +59,7 @@ public class RestService {
      * @return true if wallet is deleted, else false
      */
     public boolean deleteWallet(Integer userId) {
-        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL + "/{user_id}", HttpMethod.DELETE,
+        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL() + "/{user_id}", HttpMethod.DELETE,
                 null, String.class, userId);
         return response.getStatusCode().is2xxSuccessful();
     }
@@ -66,8 +70,8 @@ public class RestService {
      * @return true if wallet is deleted, else false
      */
     public boolean deleteWallet() {
-        log.info("Deleting all wallets at " + WALLET_SERVICE_URL);
-        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL, HttpMethod.DELETE,
+        log.info("Deleting all wallets at " + WALLET_SERVICE_URL());
+        ResponseEntity<String> response = restTemplate.exchange(WALLET_SERVICE_URL(), HttpMethod.DELETE,
                 null, String.class);
         return response.getStatusCode().is2xxSuccessful();
     }

@@ -18,8 +18,10 @@ import java.util.concurrent.CompletionStage;
  */
 public class App {
     static void startHttpServer(Route route, ActorSystem<?> system) {
+        String dockerString = System.getenv("DOCKER_RUNNING");
+        boolean dockerRunning = (dockerString != null && System.getenv("DOCKER_RUNNING").equals("TRUE"));
         CompletionStage<ServerBinding> futureBinding =
-                Http.get(system).newServerAt("0.0.0.0", 8080).bind(route);
+                Http.get(system).newServerAt("0.0.0.0", (dockerRunning ? 8080:8081)).bind(route);
 
         futureBinding.whenComplete((binding, exception) -> {
             if (binding != null) {
