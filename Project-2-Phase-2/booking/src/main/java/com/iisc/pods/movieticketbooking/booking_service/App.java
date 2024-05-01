@@ -47,6 +47,7 @@ public class App {
                 GroupRouter<BookingWorker.Request> group = Routers.group(BOOKING_WORKER_SERVICE_KEY);
                 ActorRef<BookingWorker.Request> router = context.spawn(group, "worker-group");
 
+                // If the node is primary, initialize the show actors and start the HTTP server
                 if (cluster.selfMember().hasRole("primary")) {
                     integerShowMap.values().forEach(show -> ShowActor.initSharding(context.getSystem(), show));
                     // Create a map of theatre id -> show id from integerShowMap
@@ -58,9 +59,11 @@ public class App {
                     });
                     ActorRef<BookingActor.Request> bookingActor =
                             context.spawn(BookingActor.create(router, theatreShowMap), "BookingActor");
+                    // Start the HTTP server
                     BookingRoutes bookingRoutes = new BookingRoutes(context.getSystem(), bookingActor);
                     startHttpServer(bookingRoutes.bookingServiceRoute(), context.getSystem());
                 }
+                // If the node is secondary, join the primary node
                 if (cluster.selfMember().hasRole("secondary")) {
                     cluster.manager().tell(Join.create(cluster.selfMember().address()));
                 }
