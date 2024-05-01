@@ -8,7 +8,7 @@ ENV DOCKER_RUNNING="TRUE"
 RUN apt-get update
 
 RUN apt-get -y install maven
-
+RUN mvn -v
 RUN mvn -Dmaven.test.skip=true package
 
 #RUN mv /target/*.jar /target/app.jar
